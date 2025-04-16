@@ -7,7 +7,7 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 </p>
 
 ## Features
-- Syncs heart rate, sleep, steps, weight
+- Syncs heart rate, sleep, steps, weight, exercise, oxygen, calories, etc
 - Background sync support
 - Customizable sensor name and update interval
 - Works locally — no SSL server required
