@@ -8,6 +8,15 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 - Customizable sensor name and update interval
 - Works locally — no SSL server required
 
+<h2>📸 Screenshots</h2>
+
+<details><summary><b>Click here to expand</b></summary>
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/24e2ef96-fb43-4d98-90b4-e46f5d9e103d" width="30%" />
+  <img src="https://github.com/user-attachments/assets/19631fca-6330-47ec-b3c5-37cdc0bad1fd" width="30%" />
+</p>
+</details>
+
 ## 📥 Download
 
 - [Download from Pling](https://www.pling.com/p/2280404/)
