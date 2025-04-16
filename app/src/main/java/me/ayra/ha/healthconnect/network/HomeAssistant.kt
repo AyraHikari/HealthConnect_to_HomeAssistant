@@ -1,6 +1,5 @@
 package me.ayra.ha.healthconnect.network
 
-import me.ayra.ha.healthconnect.utils.DataStore.toJson
 import me.ayra.ha.healthconnect.utils.TimeUtils.unixTimeMs
 
 object HomeAssistant {

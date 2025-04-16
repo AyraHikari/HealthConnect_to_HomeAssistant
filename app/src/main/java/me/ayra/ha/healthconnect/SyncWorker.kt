@@ -3,8 +3,6 @@ package me.ayra.ha.healthconnect
 import android.content.Context
 import android.os.RemoteException
 import android.util.Log
-import android.view.View
-import androidx.core.content.ContextCompat
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -17,22 +15,16 @@ import androidx.work.WorkerParameters
 import kotlinx.coroutines.delay
 import me.ayra.ha.healthconnect.data.Settings
 import me.ayra.ha.healthconnect.data.Settings.getAutoSync
-import me.ayra.ha.healthconnect.data.Settings.getLastSync
 import me.ayra.ha.healthconnect.data.Settings.getSettings
 import me.ayra.ha.healthconnect.data.Settings.removeLastError
 import me.ayra.ha.healthconnect.data.Settings.setLastError
 import me.ayra.ha.healthconnect.data.Settings.setLastSync
 import me.ayra.ha.healthconnect.data.Settings.setSettings
 import me.ayra.ha.healthconnect.network.HomeAssistant.sendToHomeAssistant
-import me.ayra.ha.healthconnect.utils.Coroutines.main
 import me.ayra.ha.healthconnect.utils.DataStore.toJson
 import me.ayra.ha.healthconnect.utils.HealthConnectManager
 import me.ayra.ha.healthconnect.utils.HealthData
-import me.ayra.ha.healthconnect.utils.TimeUtils.toDate
 import me.ayra.ha.healthconnect.utils.TimeUtils.unixTimeMs
-import me.ayra.ha.healthconnect.utils.UiUtils.showError
-import me.ayra.ha.healthconnect.utils.UiUtils.showSuccess
-import me.ayra.ha.healthconnect.utils.UiUtils.stopRotate
 import java.util.concurrent.TimeUnit
 
 class SyncWorker(context: Context, workerParams: WorkerParameters)

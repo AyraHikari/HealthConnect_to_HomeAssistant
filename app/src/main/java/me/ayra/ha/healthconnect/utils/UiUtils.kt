@@ -2,16 +2,12 @@ package me.ayra.ha.healthconnect.utils
 
 import android.animation.ObjectAnimator
 import android.app.Activity
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.text.Spanned
 import android.util.Log
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.annotation.IdRes
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavOptions

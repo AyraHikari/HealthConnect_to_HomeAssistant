@@ -1,7 +1,6 @@
 package me.ayra.ha.healthconnect.data
 
 import android.content.Context
-import android.os.Message
 import me.ayra.ha.healthconnect.utils.DataStore.getKey
 import me.ayra.ha.healthconnect.utils.DataStore.removeKey
 import me.ayra.ha.healthconnect.utils.DataStore.setKey

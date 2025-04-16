@@ -1,10 +1,10 @@
 package me.ayra.ha.healthconnect.utils
 
 import androidx.health.connect.client.records.SleepSessionRecord
+import me.ayra.ha.healthconnect.utils.FitUtils.toExerciseName
 import me.ayra.ha.healthconnect.utils.SleepUtils.toSleepStageText
 import me.ayra.ha.healthconnect.utils.TimeUtils.dayTimestamp
 import me.ayra.ha.healthconnect.utils.TimeUtils.toTimeCount
-import me.ayra.ha.healthconnect.utils.FitUtils.toExerciseName
 
 class HealthData(
     private var isUnavailable: Boolean = false,

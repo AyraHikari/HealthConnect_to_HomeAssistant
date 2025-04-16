@@ -3,13 +3,9 @@ package me.ayra.ha.healthconnect.utils
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
-import me.ayra.ha.healthconnect.R
-import java.time.MonthDay
-import java.time.format.DateTimeFormatter
-import java.util.SortedMap
 import androidx.core.net.toUri
+import me.ayra.ha.healthconnect.R
 
 object AppUtils {
     fun Activity.openUrlInBrowser(url: String) {

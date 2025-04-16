@@ -1,12 +1,8 @@
 package me.ayra.ha.healthconnect.ui
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.os.Bundle
 import android.text.InputFilter
 import android.text.InputType
-import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -18,7 +14,6 @@ import com.google.android.material.textfield.TextInputLayout
 import me.ayra.ha.healthconnect.R
 import me.ayra.ha.healthconnect.data.Settings.getSettings
 import me.ayra.ha.healthconnect.data.Settings.setSettings
-import me.ayra.ha.healthconnect.utils.UiUtils.alertPopup
 import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
 
 class SettingsFragment : PreferenceFragmentCompat() {

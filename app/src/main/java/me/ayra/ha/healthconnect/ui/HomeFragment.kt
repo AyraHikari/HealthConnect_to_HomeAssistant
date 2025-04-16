@@ -10,7 +10,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.health.connect.client.PermissionController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import me.ayra.ha.healthconnect.R
 import me.ayra.ha.healthconnect.SyncWorker
 import me.ayra.ha.healthconnect.data.Settings
@@ -33,7 +32,6 @@ import me.ayra.ha.healthconnect.utils.HealthConnectManager
 import me.ayra.ha.healthconnect.utils.HealthData
 import me.ayra.ha.healthconnect.utils.TimeUtils.toDate
 import me.ayra.ha.healthconnect.utils.TimeUtils.unixTimeMs
-import me.ayra.ha.healthconnect.utils.UiUtils.alertPopup
 import me.ayra.ha.healthconnect.utils.UiUtils.navigate
 import me.ayra.ha.healthconnect.utils.UiUtils.showError
 import me.ayra.ha.healthconnect.utils.UiUtils.showSuccess
