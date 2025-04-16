@@ -92,3 +92,8 @@ yaxis:
     max: 150
     decimals: 0
 ```
+
+Example Result:
+
+![test](https://github.com/user-attachments/assets/9cf7837a-4ba3-4efe-84ae-1ae1bd5ceae0)
+
