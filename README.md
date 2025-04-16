@@ -6,6 +6,11 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 - Syncs heart rate, sleep, steps, weight
 - Background sync support
 - Customizable sensor name and update interval
+- Works locally — no SSL server required
+
+## 📥 Download
+
+- [Download from Pling](https://www.pling.com/p/2280404/)
 
 ## 📦 How to Use
 
@@ -98,3 +103,6 @@ Example Result:
 
 ![test](https://github.com/user-attachments/assets/9cf7837a-4ba3-4efe-84ae-1ae1bd5ceae0)
 
+# 📝 License
+
+This project is licensed under the [GNU General Public License v3.0 (GPLv3)](https://github.com/AyraHikari/HealthConnect_to_HomeAssistant/blob/master/LICENSE).
