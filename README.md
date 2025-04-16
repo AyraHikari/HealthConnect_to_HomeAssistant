@@ -2,7 +2,11 @@
 
 Easily export your Health Connect data to Home Assistant and visualize it with beautiful charts.
 
-## 🚀 Features
+<p align="center">
+    <img src="https://github.com/user-attachments/assets/67819701-32a4-46db-a9e6-33cddd0bc3eb"/>
+</p>
+
+## Features
 - Syncs heart rate, sleep, steps, weight
 - Background sync support
 - Customizable sensor name and update interval
@@ -17,11 +21,11 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 </p>
 </details>
 
-## 📥 Download
+## Download
 
 - [Download from Pling](https://www.pling.com/p/2280404/)
 
-## 📦 How to Use
+## How to Use
 
 <details><summary><b>Click here to expand</b></summary>
   
@@ -70,7 +74,7 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 - Search for sensor.health_connect to see your synced data.
 </details>
 
-## 📊 Home Assistant Card Example
+## Home Assistant Card Example
 
 <details><summary><b>Click here to expand</b></summary>
   
