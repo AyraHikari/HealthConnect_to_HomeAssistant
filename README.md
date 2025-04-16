@@ -8,7 +8,8 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 - Customizable sensor name and update interval
 
 ## 📦 How to Use
-1. Generate a Home Assistant Access Token
+
+### 1. Generate a Home Assistant Access Token
 
 - Log in to your Home Assistant instance.
 
@@ -20,7 +21,7 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 
 - Name it something like Health Connect, then copy the token.
 
-2. Set Up Health Connect to Home Assistant
+### 2. Set Up Health Connect to Home Assistant
 
 - Enter your Home Assistant URL.
 
@@ -28,7 +29,7 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 
 - (Optional) Customize the sensor entity ID and sync interval.
 
-3. Log In & Grant Permissions
+### 3. Log In & Grant Permissions
 
 - Click Login and confirm it's connected successfully.
 
@@ -40,13 +41,13 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 
   - Allow background sync if prompted.
 
-4. Sync Your Data
+### 4. Sync Your Data
 
 - The app will automatically sync in the background.
 
 - You can also tap Manual Sync to trigger it immediately.
 
-5. (Optional) Check Home Assistant Entities
+### 5. (Optional) Check Home Assistant Entities
 
 - Go to Developer Tools > States in Home Assistant.
 
