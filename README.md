@@ -3,7 +3,7 @@
 Easily export your Health Connect data to Home Assistant and visualize it with beautiful charts.
 
 <p align="center">
-    <img src="https://github.com/user-attachments/assets/67819701-32a4-46db-a9e6-33cddd0bc3eb"/>
+    <img src="https://github.com/user-attachments/assets/1981aada-8c78-47b6-b5da-55b44bcaa9f7"/>
 </p>
 
 ## Features
