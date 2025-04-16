@@ -16,6 +16,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.delay
 import me.ayra.ha.healthconnect.data.Settings
+import me.ayra.ha.healthconnect.data.Settings.getAutoSync
 import me.ayra.ha.healthconnect.data.Settings.getLastSync
 import me.ayra.ha.healthconnect.data.Settings.getSettings
 import me.ayra.ha.healthconnect.data.Settings.removeLastError
@@ -100,6 +101,8 @@ class SyncWorker(context: Context, workerParams: WorkerParameters)
     }
 
     override suspend fun doWork(): Result {
+        if (applicationContext.getAutoSync() == false) return Result.success()
+
         var attempt = 0
         var lastError: Exception? = null
 
@@ -137,7 +140,7 @@ class SyncWorker(context: Context, workerParams: WorkerParameters)
 
         // 2. Get health data with retry logic
         val healthData = try {
-            HealthData().updateHealthData(hc).also {
+            HealthData().getHealthData(hc).also {
                 context.setSettings("health_data", it.toJson())
             }
         } catch (e: Exception) {

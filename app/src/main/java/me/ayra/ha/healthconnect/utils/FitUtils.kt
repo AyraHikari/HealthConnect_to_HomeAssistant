@@ -1,5 +1,66 @@
-package me.ayra.healthconnectsync.utils
+package me.ayra.ha.healthconnect.utils
 
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_BADMINTON
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_BASEBALL
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_BASKETBALL
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_BIKING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_BIKING_STATIONARY
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_BOOT_CAMP
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_BOXING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_CALISTHENICS
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_CRICKET
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_DANCING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_ELLIPTICAL
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_EXERCISE_CLASS
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_FENCING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_FOOTBALL_AMERICAN
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_FOOTBALL_AUSTRALIAN
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_FRISBEE_DISC
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_GOLF
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_GUIDED_BREATHING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_GYMNASTICS
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_HANDBALL
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_HIKING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_ICE_HOCKEY
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_ICE_SKATING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_MARTIAL_ARTS
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_OTHER_WORKOUT
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_PADDLING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_PARAGLIDING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_PILATES
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_RACQUETBALL
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROCK_CLIMBING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROLLER_HOCKEY
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROWING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_ROWING_MACHINE
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_RUGBY
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_RUNNING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_RUNNING_TREADMILL
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SAILING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SCUBA_DIVING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SKATING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SKIING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SNOWBOARDING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SNOWSHOEING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SOCCER
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SOFTBALL
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SQUASH
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_STAIR_CLIMBING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_STAIR_CLIMBING_MACHINE
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_STRENGTH_TRAINING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_STRETCHING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SURFING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SWIMMING_OPEN_WATER
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_SWIMMING_POOL
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_TABLE_TENNIS
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_TENNIS
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_VOLLEYBALL
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_WALKING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_WATER_POLO
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_WEIGHTLIFTING
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_WHEELCHAIR
+import androidx.health.connect.client.records.ExerciseSessionRecord.Companion.EXERCISE_TYPE_YOGA
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -253,6 +314,73 @@ object FitUtils {
             score in 20.0..39.99 -> "#5CA28F" // Lightened version of #2D6457 (Needs Attention)
             score < 20 -> "#6D9B65" // Lightened version of #2D642E (Very Low)
             else -> "#B0B0B0" // Invalid Score (Light Gray)
+        }
+    }
+
+    fun Int.toExerciseName(): String {
+        return when (this) {
+            EXERCISE_TYPE_BADMINTON -> "Badminton"
+            EXERCISE_TYPE_BASEBALL -> "Baseball"
+            EXERCISE_TYPE_BASKETBALL -> "Basketball"
+            EXERCISE_TYPE_BIKING -> "Biking"
+            EXERCISE_TYPE_BIKING_STATIONARY -> "Stationary Biking"
+            EXERCISE_TYPE_BOOT_CAMP -> "Boot Camp"
+            EXERCISE_TYPE_BOXING -> "Boxing"
+            EXERCISE_TYPE_CALISTHENICS -> "Calisthenics"
+            EXERCISE_TYPE_CRICKET -> "Cricket"
+            EXERCISE_TYPE_DANCING -> "Dancing"
+            EXERCISE_TYPE_ELLIPTICAL -> "Elliptical"
+            EXERCISE_TYPE_EXERCISE_CLASS -> "Exercise Class"
+            EXERCISE_TYPE_FENCING -> "Fencing"
+            EXERCISE_TYPE_FOOTBALL_AMERICAN -> "American Football"
+            EXERCISE_TYPE_FOOTBALL_AUSTRALIAN -> "Australian Football"
+            EXERCISE_TYPE_FRISBEE_DISC -> "Frisbee/Disc"
+            EXERCISE_TYPE_GOLF -> "Golf"
+            EXERCISE_TYPE_GUIDED_BREATHING -> "Guided Breathing"
+            EXERCISE_TYPE_GYMNASTICS -> "Gymnastics"
+            EXERCISE_TYPE_HANDBALL -> "Handball"
+            EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING -> "HIIT"
+            EXERCISE_TYPE_HIKING -> "Hiking"
+            EXERCISE_TYPE_ICE_HOCKEY -> "Ice Hockey"
+            EXERCISE_TYPE_ICE_SKATING -> "Ice Skating"
+            EXERCISE_TYPE_MARTIAL_ARTS -> "Martial Arts"
+            EXERCISE_TYPE_OTHER_WORKOUT -> "Other Workout"
+            EXERCISE_TYPE_PADDLING -> "Paddling"
+            EXERCISE_TYPE_PARAGLIDING -> "Paragliding"
+            EXERCISE_TYPE_PILATES -> "Pilates"
+            EXERCISE_TYPE_RACQUETBALL -> "Racquetball"
+            EXERCISE_TYPE_ROCK_CLIMBING -> "Rock Climbing"
+            EXERCISE_TYPE_ROLLER_HOCKEY -> "Roller Hockey"
+            EXERCISE_TYPE_ROWING -> "Rowing"
+            EXERCISE_TYPE_ROWING_MACHINE -> "Rowing Machine"
+            EXERCISE_TYPE_RUGBY -> "Rugby"
+            EXERCISE_TYPE_RUNNING -> "Running"
+            EXERCISE_TYPE_RUNNING_TREADMILL -> "Treadmill Running"
+            EXERCISE_TYPE_SAILING -> "Sailing"
+            EXERCISE_TYPE_SCUBA_DIVING -> "Scuba Diving"
+            EXERCISE_TYPE_SKATING -> "Skating"
+            EXERCISE_TYPE_SKIING -> "Skiing"
+            EXERCISE_TYPE_SNOWBOARDING -> "Snowboarding"
+            EXERCISE_TYPE_SNOWSHOEING -> "Snowshoeing"
+            EXERCISE_TYPE_SOCCER -> "Soccer"
+            EXERCISE_TYPE_SOFTBALL -> "Softball"
+            EXERCISE_TYPE_SQUASH -> "Squash"
+            EXERCISE_TYPE_STAIR_CLIMBING -> "Stair Climbing"
+            EXERCISE_TYPE_STAIR_CLIMBING_MACHINE -> "Stair Climbing Machine"
+            EXERCISE_TYPE_STRENGTH_TRAINING -> "Strength Training"
+            EXERCISE_TYPE_STRETCHING -> "Stretching"
+            EXERCISE_TYPE_SURFING -> "Surfing"
+            EXERCISE_TYPE_SWIMMING_OPEN_WATER -> "Open Water Swimming"
+            EXERCISE_TYPE_SWIMMING_POOL -> "Pool Swimming"
+            EXERCISE_TYPE_TABLE_TENNIS -> "Table Tennis"
+            EXERCISE_TYPE_TENNIS -> "Tennis"
+            EXERCISE_TYPE_VOLLEYBALL -> "Volleyball"
+            EXERCISE_TYPE_WALKING -> "Walking"
+            EXERCISE_TYPE_WATER_POLO -> "Water Polo"
+            EXERCISE_TYPE_WEIGHTLIFTING -> "Weightlifting"
+            EXERCISE_TYPE_WHEELCHAIR -> "Wheelchair"
+            EXERCISE_TYPE_YOGA -> "Yoga"
+            else -> "Unknown"
         }
     }
 }

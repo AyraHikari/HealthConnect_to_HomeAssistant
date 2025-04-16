@@ -34,7 +34,7 @@ object TimeUtils {
         val currentZoneId = ZoneId.systemDefault()
         val instant = Instant.ofEpochSecond(timestamp)
 
-        val formatter = DateTimeFormatter.ofPattern("dd")
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             .withZone(currentZoneId)
 
         return formatter.format(instant)

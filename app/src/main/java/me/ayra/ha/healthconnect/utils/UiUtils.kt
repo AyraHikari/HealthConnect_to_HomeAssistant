@@ -22,27 +22,6 @@ import com.google.android.material.snackbar.Snackbar
 import me.ayra.ha.healthconnect.R
 
 object UiUtils {
-    fun Activity.openUrlInBrowser(url: String) {
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            Toast.makeText(
-                this,
-                getString(R.string.error_no_browser),
-                Toast.LENGTH_SHORT
-            ).show()
-        } catch (e: Exception) {
-            Toast.makeText(
-                this,
-                getString(R.string.error_open_url),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
     fun Activity?.popBackStack() {
         try {
             if (this is FragmentActivity) {

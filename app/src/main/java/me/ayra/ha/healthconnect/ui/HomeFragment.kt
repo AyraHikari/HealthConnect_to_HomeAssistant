@@ -126,7 +126,7 @@ class HomeFragment : Fragment() {
                             }
                             return@ioSafe
                         }
-                        val healthData = health.updateHealthData(hc)
+                        val healthData = health.getHealthData(hc)
                         context?.setSettings("health_data", healthData.toJson())
                         val (isSuccess, message) = sendToHomeAssistant(
                             healthData,
