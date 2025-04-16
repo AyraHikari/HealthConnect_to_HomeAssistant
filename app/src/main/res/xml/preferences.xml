@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="General">
+        <Preference
+            android:key="updateInterval"
+            android:icon="@drawable/ic_sync_24px"
+            android:title="Update Interval" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Home Assistant">
+        <Preference
+            android:key="haUrl"
+            android:icon="@drawable/ic_link_24px"
+            android:title="Server URL" />
+
+        <Preference
+            android:key="haToken"
+            android:icon="@drawable/ic_key_24px"
+            android:title="Token"
+            android:summary="Edit Home Assistant Token" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Sensors">
+        <Preference
+            android:key="sensorEntity"
+            android:icon="@drawable/ic_device_thermostat_24px"
+            android:title="Sensor Entity" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="About">
+        <Preference
+            android:key="app_version"
+            android:icon="@drawable/ic_feathericons_git_branch"
+            android:title="Version"
+            android:summary="1.0.0" />
+
+        <Preference
+            android:key="source_code"
+            android:icon="@drawable/ic_bxl_github"
+            android:title="Source Code"
+            android:summary="https://github.com/AyraHikari/HealthConnect_to_HomeAssistant" />
+    </PreferenceCategory>
+</PreferenceScreen>
