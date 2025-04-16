@@ -12,7 +12,7 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 - Customizable sensor name and update interval
 - Works locally — no SSL server required
 
-<h2>📸 Screenshots</h2>
+<h2> Screenshots</h2>
 
 <details><summary><b>Click here to expand</b></summary>
 <p float="left">
@@ -341,6 +341,6 @@ series:
 
 </details>
 
-## 📝 License
+## License
 
 This project is licensed under the [GNU General Public License v3.0 (GPLv3)](https://github.com/AyraHikari/HealthConnect_to_HomeAssistant/blob/master/LICENSE).
