@@ -14,6 +14,8 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 
 ## 📦 How to Use
 
+<details><summary><b>Click here to expand</b></summary>
+  
 ### 1. Generate a Home Assistant Access Token
 
 - Log in to your Home Assistant instance.
@@ -57,14 +59,19 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 - Go to Developer Tools > States in Home Assistant.
 
 - Search for sensor.health_connect to see your synced data.
+</details>
 
-# 📊 Home Assistant Card (Heart Rate Example)
+## 📊 Home Assistant Card Example
 
-- Prerequisite
+<details><summary><b>Click here to expand</b></summary>
+  
+### Prerequisite
 
   - Install [apexcharts-card](https://github.com/RomRider/apexcharts-card) via HACS or manual.
 
   - Refresh your browser after install.
+
+### Heart Rate Chart
 
 YAML Configuration
 ```yaml
@@ -90,19 +97,237 @@ series:
     extend_to: false
     float_precision: 0
     data_generator: |
-      return entity.attributes.heart.heartRateSamples.map(sample => {
-        return [new Date(sample.time * 1000), sample.bpm];
-      });
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const key = `${year}-${month}-${day}`;
+      const samples = entity.attributes.heart?.[key] || {};
+      return Object.values(samples).map(sample => {
+        return [sample.time * 1000, sample.bpm];
+      }).sort((a, b) => a[0] - b[0]);
 yaxis:
   - min: 0
     max: 150
     decimals: 0
 ```
 
-Example Result:
+### Sleep Stats Chart
 
-![test](https://github.com/user-attachments/assets/9cf7837a-4ba3-4efe-84ae-1ae1bd5ceae0)
+YAML Configuration
+```yaml
+type: custom:apexcharts-card
+graph_span: 1d
+header:
+  show: true
+  title: Sleep Stats
+  show_states: true
+  colorize_states: true
+all_series_config:
+  stroke_width: 10
+series:
+  - entity: sensor.health_connect
+    name: Total Sleep
+    color: "#d62728"
+    show:
+      in_chart: false
+      in_header: true
+      as_duration: second
+    extend_to: false
+    float_precision: 0
+    data_generator: |
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate() - 1).padStart(2, '0'); // Yesterday's
+      const key = `${year}-${month}-${day}`;
+      const sleep = entity.attributes.sleep?.[key] || {};
+      if (sleep.start && sleep.end) {
+        return [[sleep.start * 1000, sleep.end - sleep.start]];
+      }
+      return [];
+  - entity: sensor.health_connect
+    name: Awake
+    type: line
+    color: grey
+    show:
+      in_header: false
+      legend_value: false
+      as_duration: second
+    extend_to: false
+    float_precision: 0
+    data_generator: >
+      const date = new Date();
 
-# 📝 License
+      const year = date.getFullYear();
+
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+
+      const day = String(date.getDate() - 1).padStart(2, '0'); // Yesterday's
+      data
+
+      const key = `${year}-${month}-${day}`;
+
+      const sleepStages = entity.attributes.sleep?.[key]?.stage || [];
+
+      let result = [];
+
+      sleepStages.forEach(stage => {
+        if (stage.stage === "1") {
+          stage.sessions.forEach(session => {
+            result.push([session.startTime * 1000, stage.totalTime]);
+            result.push([session.endTime * 1000, stage.totalTime]);
+          });
+        }
+      });
+
+      return result.sort((a, b) => a[0] - b[0]);
+  - entity: sensor.health_connect
+    name: Light Sleep
+    type: line
+    color: "#1f77b4"
+    show:
+      in_header: false
+      legend_value: false
+      as_duration: second
+    extend_to: false
+    float_precision: 0
+    data_generator: >
+      const date = new Date();
+
+      const year = date.getFullYear();
+
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+
+      const day = String(date.getDate() - 1).padStart(2, '0'); // Yesterday's
+      data
+
+      const key = `${year}-${month}-${day}`;
+
+      const sleepStages = entity.attributes.sleep?.[key]?.stage || [];
+
+      let result = [];
+
+      sleepStages.forEach(stage => {
+        if (stage.stage === "4") {
+          stage.sessions.forEach(session => {
+            result.push([session.startTime * 1000, stage.totalTime]);
+            result.push([session.endTime * 1000, stage.totalTime]);
+          });
+        }
+      });
+
+      return result.sort((a, b) => a[0] - b[0]);
+  - entity: sensor.health_connect
+    name: Deep Sleep
+    type: line
+    color: "#2ca02c"
+    extend_to: false
+    show:
+      in_header: false
+      legend_value: false
+      as_duration: second
+    float_precision: 0
+    data_generator: >
+      const date = new Date();
+
+      const year = date.getFullYear();
+
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+
+      const day = String(date.getDate() - 1).padStart(2, '0'); // Yesterday's
+      data
+
+      const key = `${year}-${month}-${day}`;
+
+      const sleepStages = entity.attributes.sleep?.[key]?.stage || [];
+
+      let result = [];
+
+      sleepStages.forEach(stage => {
+        if (stage.stage === "5") {
+          stage.sessions.forEach(session => {
+            result.push([session.startTime * 1000, stage.totalTime]);
+            result.push([session.endTime * 1000, stage.totalTime]);
+          });
+        }
+      });
+
+      return result.sort((a, b) => a[0] - b[0]);
+  - entity: sensor.health_connect
+    name: REM
+    type: line
+    color: "#9467bd"
+    extend_to: false
+    show:
+      in_header: false
+      legend_value: false
+      as_duration: second
+    float_precision: 0
+    data_generator: >
+      const date = new Date();
+
+      const year = date.getFullYear();
+
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+
+      const day = String(date.getDate() - 1).padStart(2, '0'); // Yesterday's
+      data
+
+      const key = `${year}-${month}-${day}`;
+
+      const sleepStages = entity.attributes.sleep?.[key]?.stage || [];
+
+      let result = [];
+
+      sleepStages.forEach(stage => {
+        if (stage.stage === "6") {
+          stage.sessions.forEach(session => {
+            result.push([session.startTime * 1000, stage.totalTime]);
+            result.push([session.endTime * 1000, stage.totalTime]);
+          });
+        }
+      });
+
+      return result.sort((a, b) => a[0] - b[0]);
+```
+
+### Calories Burned Chart
+
+```yaml
+type: custom:apexcharts-card
+header:
+  title: Calories Burned
+  show: true
+graph_span: 7d
+span:
+  start: day
+  offset: "-6d"
+apex_config:
+  chart:
+    height: 300px
+  stroke:
+    curve: smooth
+    width: 2
+series:
+  - entity: sensor.health_connect
+    name: Calories Burned
+    color: "#d62728"
+    type: line
+    extend_to: false
+    float_precision: 0
+    show:
+      in_header: true
+    data_generator: |
+      const data = entity.attributes.calories || {};
+      return Object.entries(data).map(([date, item]) => {
+        const timestamp = item.startTime * 1000;
+        return [timestamp, item.energy];
+      }).sort((a, b) => a[0] - b[0]);
+```
+
+</details>
+
+## 📝 License
 
 This project is licensed under the [GNU General Public License v3.0 (GPLv3)](https://github.com/AyraHikari/HealthConnect_to_HomeAssistant/blob/master/LICENSE).
