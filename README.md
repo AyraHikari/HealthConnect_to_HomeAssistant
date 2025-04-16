@@ -57,7 +57,7 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 
 - Prerequisite
 
-  - Install apexcharts-card via HACS.
+  - Install [apexcharts-card](https://github.com/RomRider/apexcharts-card) via HACS or manual.
 
   - Refresh your browser after install.
 
