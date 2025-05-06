@@ -256,6 +256,24 @@ class HealthConnectManager(private val context: Context) {
         return fetchedData.records
     }
 
+    suspend fun getHydrationRecord(days: Long = 7): List<HydrationRecord>? {
+        val currentZoneId = ZoneId.systemDefault()
+        val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
+        val startDateTime = endDateTime.minusDays(days)
+
+        val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
+        val fetchedData = try {
+            val request = ReadRecordsRequest(
+                recordType = HydrationRecord::class,
+                timeRangeFilter = timeRange
+            )
+            healthConnectClient.readRecords(request)
+        } catch (e: Exception) {
+            return null
+        }
+        return fetchedData.records
+    }
+
     suspend fun getTotalCaloriesBurned(days: Long = 7): List<TotalCaloriesBurnedRecord>? {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)

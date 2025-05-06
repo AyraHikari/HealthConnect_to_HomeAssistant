@@ -17,6 +17,7 @@ class HealthData(
         val weight = getWeightData(hc)
         val exercise = getExerciseData(hc)
         val oxygen = getOxygenSaturation(hc)
+        val hydration = getHydrationRecord(hc)
         val calories = getTotalCaloriesBurned(hc)
 
         return mutableMapOf(
@@ -26,6 +27,7 @@ class HealthData(
             "weight" to weight,
             "exercise" to exercise,
             "oxygen" to oxygen,
+            "hydration" to hydration,
             "calories" to calories
         )
     }
@@ -319,6 +321,29 @@ class HealthData(
         if (resultMap.isEmpty()) {
             isUnavailable = true
             if (!unavailableReason.contains("oxygen saturation")) unavailableReason.add("oxygen saturation")
+            return null
+        }
+
+        return resultMap
+    }
+
+    private suspend fun getHydrationRecord(hc: HealthConnectManager): Map<String, Any?>? {
+        val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
+
+        hc.getHydrationRecord()?.forEach { record ->
+            val date = dayTimestamp(record.startTime.epochSecond) ?: "unknown"
+
+            val dayData = resultMap.getOrPut(date) { mutableMapOf() }
+
+            dayData["startTime"] = record.startTime.epochSecond
+            dayData["endTime"] = record.endTime.epochSecond
+            dayData["volume"] = record.volume.inMilliliters
+            dayData["format"] = "ml"
+        }
+
+        if (resultMap.isEmpty()) {
+            isUnavailable = true
+            if (!unavailableReason.contains("hydration record")) unavailableReason.add("hydration record")
             return null
         }
 
