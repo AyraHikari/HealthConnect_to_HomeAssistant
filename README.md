@@ -23,7 +23,7 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 
 ## Download
 
-- [Download from Pling](https://www.pling.com/p/2280404/)
+- [Download from Pling](https://www.pling.com/p/2281233/)
 
 ## How to Use
 
