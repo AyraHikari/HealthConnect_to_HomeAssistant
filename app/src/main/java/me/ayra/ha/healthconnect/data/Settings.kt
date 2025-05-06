@@ -22,6 +22,13 @@ object Settings {
         return setKey(DATA, path, value)
     }
 
+    fun Context.getSettings(path: String, default: Boolean): Boolean? {
+        return getKey<Boolean>(DATA, path, default)
+    }
+    fun Context.setSettings(path: String, value: Boolean) {
+        return setKey(DATA, path, value)
+    }
+
     fun Context.getLastSync(): Long? {
         return getKey<Long>(DATA, "lastSync")
     }

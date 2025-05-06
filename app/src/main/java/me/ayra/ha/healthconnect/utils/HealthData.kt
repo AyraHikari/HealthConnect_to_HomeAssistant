@@ -1,35 +1,53 @@
 package me.ayra.ha.healthconnect.utils
 
+import android.content.Context
 import androidx.health.connect.client.records.SleepSessionRecord
+import me.ayra.ha.healthconnect.data.Settings.getSettings
 import me.ayra.ha.healthconnect.utils.FitUtils.toExerciseName
 import me.ayra.ha.healthconnect.utils.SleepUtils.toSleepStageText
 import me.ayra.ha.healthconnect.utils.TimeUtils.dayTimestamp
 import me.ayra.ha.healthconnect.utils.TimeUtils.toTimeCount
 
 class HealthData(
+    val context: Context,
     private var isUnavailable: Boolean = false,
     private val unavailableReason: MutableList<String> = mutableListOf<String>()
 ) {
     suspend fun getHealthData(hc: HealthConnectManager): MutableMap<String, Any?> {
-        val sleep = getSleepData(hc)
-        val heartRate = getHeartRateData(hc)
-        val steps = getStepsData(hc)
-        val weight = getWeightData(hc)
-        val exercise = getExerciseData(hc)
-        val oxygen = getOxygenSaturation(hc)
-        val hydration = getHydrationRecord(hc)
-        val calories = getTotalCaloriesBurned(hc)
-
-        return mutableMapOf(
-            "sleep" to sleep,
-            "heart" to heartRate,
-            "steps" to steps,
-            "weight" to weight,
-            "exercise" to exercise,
-            "oxygen" to oxygen,
-            "hydration" to hydration,
-            "calories" to calories
-        )
+        var healthData = mutableMapOf<String, Any?>()
+        if (context.getSettings("sleep", true) == true) {
+            val sleep = getSleepData(hc)
+            healthData["sleep"] = sleep
+        }
+        if (context.getSettings("heartRate", true) == true) {
+            val heartRate = getHeartRateData(hc)
+            healthData["heart"] = heartRate
+        }
+        if (context.getSettings("steps", true) == true) {
+            val steps = getStepsData(hc)
+            healthData["steps"] = steps
+        }
+        if (context.getSettings("weight", true) == true) {
+            val weight = getWeightData(hc)
+            healthData["weight"] = weight
+        }
+        if (context.getSettings("exercise", true) == true) {
+            val exercise = getExerciseData(hc)
+            healthData["exercise"] = exercise
+        }
+        if (context.getSettings("oxygen", true) == true) {
+            val oxygen = getOxygenSaturation(hc)
+            healthData["oxygen"] = oxygen
+        }
+        if (context.getSettings("hydration", true) == true) {
+            val hydration = getHydrationRecord(hc)
+            healthData["hydration"] = hydration
+        }
+        if (context.getSettings("calories", true) == true) {
+            val calories = getTotalCaloriesBurned(hc)
+            healthData["calories"] = calories
+        }
+        return healthData
     }
 
     private suspend fun getExerciseData(hc: HealthConnectManager): Map<String, Any?>? {

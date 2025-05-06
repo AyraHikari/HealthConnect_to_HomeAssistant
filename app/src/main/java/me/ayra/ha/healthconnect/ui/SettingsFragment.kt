@@ -15,6 +15,7 @@ import me.ayra.ha.healthconnect.R
 import me.ayra.ha.healthconnect.data.Settings.getSettings
 import me.ayra.ha.healthconnect.data.Settings.setSettings
 import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
+import me.ayra.ha.healthconnect.utils.UiUtils.navigate
 
 class SettingsFragment : PreferenceFragmentCompat() {
 
@@ -25,6 +26,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setupUrlPreference()
         setupTokenPreference()
         setupSensorEntityPreference()
+        setupHealthDataPreference()
         setupAboutPreference()
     }
 
@@ -77,6 +79,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 showInputDialog("sensor", getString(R.string.login_sensor_hint), summary?.toString())
                 true
             }
+        }
+    }
+
+    private fun setupHealthDataPreference() {
+        findPreference<Preference>("healthData")?.setOnPreferenceClickListener {
+            activity?.navigate(R.id.settings_health_data_fragment)
+            true
         }
     }
 

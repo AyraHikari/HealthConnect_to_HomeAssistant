@@ -85,7 +85,7 @@ class HomeFragment : Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(this, backCallback)
 
         hc = HealthConnectManager(requireContext())
-        val health = HealthData()
+        val health = HealthData(requireContext())
 
         binding.apply {
             hcGrantPermission.setOnClickListener {

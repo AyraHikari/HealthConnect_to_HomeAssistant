@@ -132,7 +132,7 @@ class SyncWorker(context: Context, workerParams: WorkerParameters)
 
         // 2. Get health data with retry logic
         val healthData = try {
-            HealthData().getHealthData(hc).also {
+            HealthData(context).getHealthData(hc).also {
                 context.setSettings("health_data", it.toJson())
             }
         } catch (e: Exception) {

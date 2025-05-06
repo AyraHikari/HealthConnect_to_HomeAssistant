@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <CheckBoxPreference
+        android:key="sleep"
+        android:icon="@drawable/ic_ecg_heart_24px"
+        android:summary="Sleep time, deep sleep, REM sleep, light sleep, and awake time categorized by day"
+        android:title="Sleep" />
+
+    <CheckBoxPreference
+        android:key="heartRate"
+        android:icon="@drawable/ic_airline_seat_flat_24px"
+        android:summary="Heart rate in BPM categorized by day"
+        android:title="Heart Rate" />
+
+    <CheckBoxPreference
+        android:key="steps"
+        android:icon="@drawable/ic_podiatry_24px"
+        android:summary="Total steps categorized by day"
+        android:title="Steps" />
+
+    <CheckBoxPreference
+        android:key="weight"
+        android:icon="@drawable/ic_monitor_weight_24px"
+        android:summary="Body weight categorized by day"
+        android:title="Weight" />
+
+    <CheckBoxPreference
+        android:key="exercise"
+        android:icon="@drawable/ic_directions_bike_24px"
+        android:summary="All exercise history categorized by day"
+        android:title="Exercise" />
+
+    <CheckBoxPreference
+        android:key="oxygen"
+        android:icon="@drawable/ic_pulmonology_24px"
+        android:summary="Oxygen levels (in percentage) categorized by day"
+        android:title="Oxygen" />
+
+    <CheckBoxPreference
+        android:key="hydration"
+        android:icon="@drawable/ic_water_drop_24px"
+        android:summary="Hydration record (in milliliters) categorized by day"
+        android:title="Hydration" />
+
+    <CheckBoxPreference
+        android:key="calories"
+        android:icon="@drawable/ic_fitness_tracker_24px"
+        android:summary="Total calories (in kcal) categorized by day"
+        android:title="Calories" />
+</PreferenceScreen>

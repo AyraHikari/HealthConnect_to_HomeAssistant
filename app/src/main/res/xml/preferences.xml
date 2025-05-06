@@ -27,6 +27,14 @@
             android:title="Sensor Entity" />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="Health Data">
+        <Preference
+            android:key="healthData"
+            android:title="Health Data to Send"
+            android:icon="@drawable/ic_upload_file_24px"
+            android:summary="Click to configure health data settings" />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="About">
         <Preference
             android:key="app_version"
