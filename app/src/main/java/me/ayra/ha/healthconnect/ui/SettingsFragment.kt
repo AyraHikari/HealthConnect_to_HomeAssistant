@@ -1,6 +1,7 @@
 package me.ayra.ha.healthconnect.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,7 @@ import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import me.ayra.ha.healthconnect.ForegroundService
 import me.ayra.ha.healthconnect.R
 import me.ayra.ha.healthconnect.data.DEFAULT_SYNC_DAYS
 import me.ayra.ha.healthconnect.data.MAX_SYNC_DAYS
@@ -30,6 +32,18 @@ import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
 import me.ayra.ha.healthconnect.utils.UiUtils.navigate
 
 class SettingsFragment : PreferenceFragmentCompat() {
+    private val requestNotificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                val context = context ?: return@registerForActivityResult
+                context.setForegroundServiceEnabled(true)
+                val serviceIntent =
+                    Intent(context.applicationContext, ForegroundService::class.java)
+                ContextCompat.startForegroundService(context.applicationContext, serviceIntent)
+                findPreference<SwitchPreferenceCompat>("foregroundService")?.isChecked = true
+            }
+        }
+
     override fun onCreatePreferences(
         savedInstanceState: Bundle?,
         rootKey: String?,
@@ -51,9 +65,32 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val storedEnabled = context?.getForegroundServiceEnabled() ?: false
         val resolvedEnabled = storedEnabled && hasNotificationPermission()
         preference.isChecked = resolvedEnabled
-        // preference.setOnPreferenceChangeListener { _, newValue ->
-        // TODO
-        // }
+        if (storedEnabled != resolvedEnabled) {
+            context?.setForegroundServiceEnabled(false)
+            context?.let { ForegroundService.stopService(it) }
+        }
+        preference.setOnPreferenceChangeListener { _, newValue ->
+            val enabled = newValue as? Boolean ?: return@setOnPreferenceChangeListener false
+            val context = context ?: return@setOnPreferenceChangeListener false
+
+            if (enabled) {
+                if (!hasNotificationPermission()) {
+                    if (requiresNotificationPermission()) {
+                        requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                    return@setOnPreferenceChangeListener false
+                }
+
+                context.setForegroundServiceEnabled(true)
+                val serviceIntent = Intent(context.applicationContext, ForegroundService::class.java)
+                ContextCompat.startForegroundService(context.applicationContext, serviceIntent)
+            } else {
+                context.setForegroundServiceEnabled(false)
+                ForegroundService.stopService(context)
+            }
+
+            true
+        }
     }
 
     private fun setupIntervalPreference() {

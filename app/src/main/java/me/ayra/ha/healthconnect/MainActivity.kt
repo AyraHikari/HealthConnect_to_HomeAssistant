@@ -5,6 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.health.connect.client.PermissionController
 import androidx.navigation.fragment.NavHostFragment
+import me.ayra.ha.healthconnect.ForegroundService.Companion.runServiceIfEnabled
 import me.ayra.ha.healthconnect.databinding.ActivityMainBinding
 import me.ayra.ha.healthconnect.network.initializeGlideWithUnsafeOkHttp
 import me.ayra.ha.healthconnect.utils.Coroutines.ioSafe
@@ -17,30 +18,34 @@ class MainActivity : AppCompatActivity() {
     private lateinit var hc: HealthConnectManager
 
     private val requestPermissionActivityContract = PermissionController.createRequestPermissionResultContract()
-    private val requestPermissions = registerForActivityResult(requestPermissionActivityContract) { granted ->
-        if (granted.containsAll(healthConnectPermissions)) {
-            // Permissions successfully granted
-        } else {
-            requestPermissionLauncher.launch(healthConnectPermissions.first())
+    private val requestPermissions =
+        registerForActivityResult(requestPermissionActivityContract) { granted ->
+            if (granted.containsAll(healthConnectPermissions)) {
+                // Permissions successfully granted
+            } else {
+                requestPermissionLauncher.launch(healthConnectPermissions.first())
+            }
         }
-    }
 
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (!isGranted) {
-            // Optionally guide user to open Health Connect manually
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (!isGranted) {
+                // Optionally guide user to open Health Connect manually
+            }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         scheduleSyncWorker()
+        applicationContext.runServiceIfEnabled()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initializeGlideWithUnsafeOkHttp(this)
 
-        val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navHostFragment =
+            supportFragmentManager
+                .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
 
         hc = HealthConnectManager(this)
 
