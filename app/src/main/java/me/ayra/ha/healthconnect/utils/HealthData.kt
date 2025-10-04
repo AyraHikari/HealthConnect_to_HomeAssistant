@@ -121,13 +121,21 @@ class HealthData(
         // Process steps data
         hc.getSteps(days)?.forEach { record ->
             val date = dayTimestamp(record.startTime.epochSecond) ?: "unknown"
-            if (!resultMap.containsKey(date)) {
-                resultMap[date] = mutableMapOf()
+            val dateData = resultMap.getOrPut(date) {
+                mutableMapOf(
+                    "startTime" to record.startTime.epochSecond,
+                    "endTime" to record.endTime.epochSecond,
+                    "count" to 0L
+                )
             }
 
-            resultMap[date]?.put("startTime", record.startTime.epochSecond)
-            resultMap[date]?.put("endTime", record.endTime.epochSecond)
-            resultMap[date]?.put("count", record.count)
+            val currentStartTime = dateData["startTime"] as Long
+            val currentEndTime = dateData["endTime"] as Long
+            val currentCount = dateData["count"] as Long
+
+            dateData["startTime"] = minOf(currentStartTime, record.startTime.epochSecond)
+            dateData["endTime"] = maxOf(currentEndTime, record.endTime.epochSecond)
+            dateData["count"] = currentCount + record.count
         }
 
         if (resultMap.isEmpty()) {
