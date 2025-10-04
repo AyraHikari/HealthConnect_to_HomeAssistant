@@ -1,5 +1,6 @@
 package me.ayra.ha.healthconnect
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -115,34 +116,49 @@ class SyncWorker(
     override suspend fun doWork(): Result {
         if (applicationContext.getAutoSync() == false) return Result.success()
 
-        if (applicationContext.getForegroundServiceEnabled()) {
-            setForeground(createForegroundInfo())
+        val context = applicationContext
+        val useForegroundNotification = context.getForegroundServiceEnabled()
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
+
+        if (useForegroundNotification) {
+            setForeground(createForegroundInfo(notificationManager))
+        } else {
+            showSyncNotification(notificationManager)
         }
 
         var attempt = 0
         var lastError: Exception? = null
 
-        while (attempt < MAX_RETRY_ATTEMPTS) {
-            try {
-                return trySync()
-            } catch (e: RemoteException) {
-                lastError = e
-                Log.w(TAG, "Health Connect binder error (attempt ${attempt + 1}/$MAX_RETRY_ATTEMPTS)", e)
-                attempt++
-                delay(1000L * (attempt + 1)) // Exponential backoff
-            } catch (e: Exception) {
-                lastError = e
-                break
+        try {
+            while (attempt < MAX_RETRY_ATTEMPTS) {
+                try {
+                    return trySync()
+                } catch (e: RemoteException) {
+                    lastError = e
+                    Log.w(
+                        TAG,
+                        "Health Connect binder error (attempt ${attempt + 1}/$MAX_RETRY_ATTEMPTS)",
+                        e,
+                    )
+                    attempt++
+                    delay(1000L * (attempt + 1)) // Exponential backoff
+                } catch (e: Exception) {
+                    lastError = e
+                    break
+                }
+            }
+            context.setLastError(
+                DataSettings.SyncError(
+                    unixTimeMs,
+                    lastError?.message ?: "Unknown error",
+                ),
+            )
+            return Result.failure()
+        } finally {
+            if (!useForegroundNotification) {
+                cancelSyncNotification(notificationManager)
             }
         }
-
-        applicationContext.setLastError(
-            DataSettings.SyncError(
-                unixTimeMs,
-                lastError?.message ?: "Unknown error",
-            ),
-        )
-        return Result.failure()
     }
 
     private suspend fun trySync(): Result {
@@ -203,11 +219,28 @@ class SyncWorker(
         }
     }
 
-    private fun createForegroundInfo(): ForegroundInfo {
+    private fun createForegroundInfo(notificationManager: NotificationManager?): ForegroundInfo =
+        ForegroundInfo(FOREGROUND_NOTIFICATION_ID, buildNotification(notificationManager))
+
+    private fun showSyncNotification(notificationManager: NotificationManager?) {
+        if (notificationManager == null) {
+            Log.w(TAG, "NotificationManager not available; unable to display sync notification")
+            return
+        }
+        notificationManager.notify(
+            FOREGROUND_NOTIFICATION_ID,
+            buildNotification(notificationManager),
+        )
+    }
+
+    private fun cancelSyncNotification(notificationManager: NotificationManager?) {
+        notificationManager?.cancel(FOREGROUND_NOTIFICATION_ID)
+    }
+
+    private fun buildNotification(notificationManager: NotificationManager?): Notification {
         val context = applicationContext
         val channelId = FOREGROUND_CHANNEL_ID
 
-        val notificationManager = context.getSystemService(NotificationManager::class.java)
         val channel =
             NotificationChannel(
                 channelId,
@@ -236,19 +269,17 @@ class SyncWorker(
             )
 
         val notificationText = context.getString(R.string.foreground_notification_text)
-        val notification =
-            NotificationCompat
-                .Builder(context, channelId)
-                .setContentTitle(context.getString(R.string.foreground_notification_title))
-                .setContentText(notificationText)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(notificationText))
-                .setSmallIcon(R.drawable.ic_sync_24px)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(true)
-                .setOnlyAlertOnce(true)
-                .setContentIntent(pendingIntent)
-                .build()
 
-        return ForegroundInfo(FOREGROUND_NOTIFICATION_ID, notification)
+        return NotificationCompat
+            .Builder(context, channelId)
+            .setContentTitle(context.getString(R.string.foreground_notification_title))
+            .setContentText(notificationText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(notificationText))
+            .setSmallIcon(R.drawable.ic_sync_24px)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(pendingIntent)
+            .build()
     }
 }
