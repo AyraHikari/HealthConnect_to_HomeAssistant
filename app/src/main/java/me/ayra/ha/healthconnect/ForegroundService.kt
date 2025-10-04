@@ -64,7 +64,7 @@ class ForegroundService : Service() {
                 .Builder(this, CHANNEL_ID)
                 .setContentTitle(getString(R.string.foreground_service_notification_title))
                 .setContentText(getString(R.string.foreground_service_notification_text))
-                .setSmallIcon(R.drawable.ic_sync_24px)
+                .setSmallIcon(R.drawable.ic_ecg_heart_24px)
                 .setOnlyAlertOnce(true)
                 .setSilent(true)
                 .setPriority(NotificationCompat.PRIORITY_MIN)
