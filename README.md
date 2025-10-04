@@ -88,12 +88,14 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 
 ### Heart Rate Chart
 
-YAML Configuration
 ```yaml
 type: custom:apexcharts-card
 header:
   title: Heart Rate
   show: true
+now:
+  show: true
+  label: now
 graph_span: 24h
 span:
   start: day
@@ -112,15 +114,13 @@ series:
     extend_to: false
     float_precision: 0
     data_generator: |
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const key = `${year}-${month}-${day}`;
-      const samples = entity.attributes.heart?.[key] || {};
-      return Object.values(samples).map(sample => {
-        return [sample.time * 1000, sample.bpm];
-      }).sort((a, b) => a[0] - b[0]);
+      const todayKey = new Intl.DateTimeFormat('en-CA', {
+        timeZone: hass.config.time_zone ?? 'UTC'
+      }).format(new Date());
+      const samples = entity.attributes.heart?.[todayKey] || {};
+      return Object.values(samples)
+        .map(sample => [sample.time * 1000, sample.bpm])
+        .sort((a, b) => a[0] - b[0]);
 yaxis:
   - min: 0
     max: 150
@@ -129,7 +129,6 @@ yaxis:
 
 ### Sleep Stats Chart
 
-YAML Configuration
 ```yaml
 type: custom:apexcharts-card
 graph_span: 1d
@@ -138,8 +137,9 @@ header:
   title: Sleep Stats
   show_states: true
   colorize_states: true
-all_series_config:
-  stroke_width: 10
+apex_config:
+  chart:
+    height: 320px
 series:
   - entity: sensor.health_connect
     name: Total Sleep
@@ -151,52 +151,30 @@ series:
     extend_to: false
     float_precision: 0
     data_generator: |
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate() - 1).padStart(2, '0'); // Yesterday's
-      const key = `${year}-${month}-${day}`;
-      const sleep = entity.attributes.sleep?.[key] || {};
-      if (sleep.start && sleep.end) {
-        return [[sleep.start * 1000, sleep.end - sleep.start]];
+      const lastSleep = entity.attributes.sleep?.lastSleep;
+      if (!lastSleep?.start || !lastSleep?.end) {
+        return [];
       }
-      return [];
+      return [[lastSleep.start * 1000, lastSleep.end - lastSleep.start]];
   - entity: sensor.health_connect
     name: Awake
     type: line
-    color: grey
+    color: "#9e9e9e"
     show:
       in_header: false
       legend_value: false
       as_duration: second
     extend_to: false
     float_precision: 0
-    data_generator: >
-      const date = new Date();
-
-      const year = date.getFullYear();
-
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-
-      const day = String(date.getDate() - 1).padStart(2, '0'); // Yesterday's
-      data
-
-      const key = `${year}-${month}-${day}`;
-
-      const sleepStages = entity.attributes.sleep?.[key]?.stage || [];
-
-      let result = [];
-
-      sleepStages.forEach(stage => {
-        if (stage.stage === "1") {
-          stage.sessions.forEach(session => {
-            result.push([session.startTime * 1000, stage.totalTime]);
-            result.push([session.endTime * 1000, stage.totalTime]);
-          });
-        }
-      });
-
-      return result.sort((a, b) => a[0] - b[0]);
+    data_generator: |
+      const stages = entity.attributes.sleep?.lastSleep?.stage || [];
+      return stages
+        .filter(stage => stage.stage === '1')
+        .flatMap(stage => stage.sessions.map(session => {
+          const duration = session.duration ?? (session.endTime - session.startTime);
+          return [session.startTime * 1000, duration];
+        }))
+        .sort((a, b) => a[0] - b[0]);
   - entity: sensor.health_connect
     name: Light Sleep
     type: line
@@ -207,32 +185,15 @@ series:
       as_duration: second
     extend_to: false
     float_precision: 0
-    data_generator: >
-      const date = new Date();
-
-      const year = date.getFullYear();
-
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-
-      const day = String(date.getDate() - 1).padStart(2, '0'); // Yesterday's
-      data
-
-      const key = `${year}-${month}-${day}`;
-
-      const sleepStages = entity.attributes.sleep?.[key]?.stage || [];
-
-      let result = [];
-
-      sleepStages.forEach(stage => {
-        if (stage.stage === "4") {
-          stage.sessions.forEach(session => {
-            result.push([session.startTime * 1000, stage.totalTime]);
-            result.push([session.endTime * 1000, stage.totalTime]);
-          });
-        }
-      });
-
-      return result.sort((a, b) => a[0] - b[0]);
+    data_generator: |
+      const stages = entity.attributes.sleep?.lastSleep?.stage || [];
+      return stages
+        .filter(stage => stage.stage === '4')
+        .flatMap(stage => stage.sessions.map(session => {
+          const duration = session.duration ?? (session.endTime - session.startTime);
+          return [session.startTime * 1000, duration];
+        }))
+        .sort((a, b) => a[0] - b[0]);
   - entity: sensor.health_connect
     name: Deep Sleep
     type: line
@@ -243,32 +204,15 @@ series:
       legend_value: false
       as_duration: second
     float_precision: 0
-    data_generator: >
-      const date = new Date();
-
-      const year = date.getFullYear();
-
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-
-      const day = String(date.getDate() - 1).padStart(2, '0'); // Yesterday's
-      data
-
-      const key = `${year}-${month}-${day}`;
-
-      const sleepStages = entity.attributes.sleep?.[key]?.stage || [];
-
-      let result = [];
-
-      sleepStages.forEach(stage => {
-        if (stage.stage === "5") {
-          stage.sessions.forEach(session => {
-            result.push([session.startTime * 1000, stage.totalTime]);
-            result.push([session.endTime * 1000, stage.totalTime]);
-          });
-        }
-      });
-
-      return result.sort((a, b) => a[0] - b[0]);
+    data_generator: |
+      const stages = entity.attributes.sleep?.lastSleep?.stage || [];
+      return stages
+        .filter(stage => stage.stage === '5')
+        .flatMap(stage => stage.sessions.map(session => {
+          const duration = session.duration ?? (session.endTime - session.startTime);
+          return [session.startTime * 1000, duration];
+        }))
+        .sort((a, b) => a[0] - b[0]);
   - entity: sensor.health_connect
     name: REM
     type: line
@@ -279,32 +223,210 @@ series:
       legend_value: false
       as_duration: second
     float_precision: 0
-    data_generator: >
-      const date = new Date();
+    data_generator: |
+      const stages = entity.attributes.sleep?.lastSleep?.stage || [];
+      return stages
+        .filter(stage => stage.stage === '6')
+        .flatMap(stage => stage.sessions.map(session => {
+          const duration = session.duration ?? (session.endTime - session.startTime);
+          return [session.startTime * 1000, duration];
+        }))
+        .sort((a, b) => a[0] - b[0]);
+```
 
-      const year = date.getFullYear();
+### Daily Steps & Goal Tracking
 
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-
-      const day = String(date.getDate() - 1).padStart(2, '0'); // Yesterday's
-      data
-
-      const key = `${year}-${month}-${day}`;
-
-      const sleepStages = entity.attributes.sleep?.[key]?.stage || [];
-
-      let result = [];
-
-      sleepStages.forEach(stage => {
-        if (stage.stage === "6") {
-          stage.sessions.forEach(session => {
-            result.push([session.startTime * 1000, stage.totalTime]);
-            result.push([session.endTime * 1000, stage.totalTime]);
-          });
-        }
+```yaml
+type: custom:apexcharts-card
+header:
+  show: true
+  title: Steps (Last 14 Days)
+graph_span: 14d
+span:
+  start: day
+  offset: "-13d"
+series:
+  - entity: sensor.health_connect
+    name: Steps
+    type: column
+    color: "#ff7f0e"
+    extend_to: false
+    float_precision: 0
+    show:
+      in_header: true
+    data_generator: |
+      const steps = entity.attributes.steps || {};
+      return Object.values(steps)
+        .map(entry => {
+          const base = (entry?.endTime ?? entry?.startTime ?? 0) * 1000;
+          if (!Number.isFinite(base) || base === 0) {
+            return null;
+          }
+          return [base, entry?.count ?? 0];
+        })
+        .filter(Boolean)
+        .sort((a, b) => a[0] - b[0]);
+  - entity: sensor.health_connect
+    type: line
+    name: Goal
+    color: "#607d8b"
+    data_generator: |
+      const dayMs = 24 * 60 * 60 * 1000;
+      const anchor = new Date();
+      anchor.setHours(0, 0, 0, 0);
+      const base = anchor.getTime();
+      return Array.from({ length: 14 }, (_, idx) => {
+        const ts = base - (13 - idx) * dayMs;
+        return [ts, 5000];
       });
+```
 
-      return result.sort((a, b) => a[0] - b[0]);
+### Weight & Body Composition Trend
+
+```yaml
+type: custom:apexcharts-card
+header:
+  title: Weight Trend
+  show: true
+graph_span: 30d
+series:
+  - entity: sensor.health_connect
+    name: Weight (kg)
+    type: line
+    color: "#8e24aa"
+    extend_to: false
+    float_precision: 2
+    data_generator: |
+      const weightData = entity.attributes.weight || {};
+      return Object.values(weightData)
+        .flatMap(day => Object.entries(day).map(([timestamp, value]) => {
+          const ts = Number(timestamp) * 1000;
+          if (!Number.isFinite(ts) || ts === 0) {
+            return null;
+          }
+          return [ts, value];
+        }))
+        .filter(Boolean)
+        .sort((a, b) => a[0] - b[0]);
+```
+
+### Blood Oxygen Saturation
+
+```yaml
+type: custom:apexcharts-card
+header:
+  title: SpO₂ Readings
+  show: true
+graph_span: 7d
+apex_config:
+  chart:
+    height: 300px
+series:
+  - entity: sensor.health_connect
+    name: SpO₂ (%)
+    type: area
+    color: "#03a9f4"
+    extend_to: false
+    float_precision: 1
+    show:
+      in_header: true
+    data_generator: |
+      const oxygenData = entity.attributes.oxygen || {};
+      return Object.values(oxygenData)
+        .flatMap(day => Object.entries(day).map(([timestamp, value]) => {
+          const ts = Number(timestamp) * 1000;
+          if (!Number.isFinite(ts) || ts === 0) {
+            return null;
+          }
+          return [ts, value];
+        }))
+        .filter(Boolean)
+        .sort((a, b) => a[0] - b[0]);
+yaxis:
+  - min: 80
+    max: 100
+    decimals: 0
+```
+
+### Hydration Log
+
+```yaml
+type: custom:apexcharts-card
+header:
+  title: Hydration (ml)
+  show: true
+graph_span: 7d
+span:
+  start: day
+  offset: "-6d"
+series:
+  - entity: sensor.health_connect
+    name: Intake
+    type: column
+    color: "#4fc3f7"
+    extend_to: false
+    float_precision: 0
+    data_generator: |
+      const hydration = entity.attributes.hydration || {};
+      return Object.values(hydration)
+        .map(entry => {
+          const base = (entry?.endTime ?? entry?.startTime ?? 0) * 1000;
+          if (!Number.isFinite(base) || base === 0) {
+            return null;
+          }
+          return [base, entry?.volume ?? 0];
+        })
+        .filter(Boolean)
+        .sort((a, b) => a[0] - b[0]);
+```
+
+### Exercise Session Timeline
+
+```yaml
+type: custom:apexcharts-card
+header:
+  title: Exercise Duration
+  show: true
+graph_span: 14d
+apex_config:
+  chart:
+    type: area
+    height: 320px
+series:
+  - entity: sensor.health_connect
+    name: Session Minutes
+    type: area
+    color: "#43a047"
+    extend_to: false
+    float_precision: 0
+    data_generator: |
+      const exercise = entity.attributes.exercise || {};
+      const minutes = Object.values(exercise)
+        .flatMap(day => (day.sessions || []).map(session => [session.startTime * 1000, session.duration / 60]));
+      return minutes.sort((a, b) => a[0] - b[0]);
+  - entity: sensor.health_connect
+    name: Total Daily Duration
+    type: column
+    color: "#66bb6a"
+    extend_to: false
+    float_precision: 0
+    data_generator: |
+      const exercise = entity.attributes.exercise || {};
+      return Object.entries(exercise)
+        .map(([date, data]) => {
+          if (!data?.totalDuration) {
+            return null;
+          }
+          const firstSession = data.sessions?.[0]?.startTime;
+          const fallbackMs = date && date !== 'unknown' ? Date.parse(`${date}T00:00:00Z`) : NaN;
+          const baseMs = Number.isFinite(firstSession) ? firstSession * 1000 : fallbackMs;
+          if (!Number.isFinite(baseMs) || baseMs === 0) {
+            return null;
+          }
+          return [baseMs, (data.totalDuration || 0) / 60];
+        })
+        .filter(Boolean)
+        .sort((a, b) => a[0] - b[0]);
 ```
 
 ### Calories Burned Chart
@@ -335,10 +457,16 @@ series:
       in_header: true
     data_generator: |
       const data = entity.attributes.calories || {};
-      return Object.entries(data).map(([date, item]) => {
-        const timestamp = item.startTime * 1000;
-        return [timestamp, item.energy];
-      }).sort((a, b) => a[0] - b[0]);
+      return Object.values(data)
+        .map(item => {
+          const base = (item?.endTime ?? item?.startTime ?? 0) * 1000;
+          if (!Number.isFinite(base) || base === 0) {
+            return null;
+          }
+          return [base, item?.energy ?? 0];
+        })
+        .filter(Boolean)
+        .sort((a, b) => a[0] - b[0]);
 ```
 
 </details>
