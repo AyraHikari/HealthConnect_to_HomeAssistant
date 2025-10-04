@@ -48,8 +48,9 @@
     <string name="foreground_service_summary">Show a notification while syncing to improve reliability. Tap the notification to turn it off.</string>
     <string name="foreground_notification_channel_name">Health data sync</string>
     <string name="foreground_notification_channel_description">Displays a persistent notification while syncing health data</string>
-    <string name="foreground_notification_title">Syncing health data</string>
+    <string name="foreground_notification_title">App is running in the background</string>
     <string name="foreground_notification_text">Tap to open notification settings and disable this notification.</string>
+    <string name="syncing_notification_title">Syncing health data…</string>
 
     <string-array name="sync_intervals">
         <item>15 minutes</item>

@@ -1,16 +1,19 @@
 package me.ayra.ha.healthconnect
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.RemoteException
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -117,14 +120,10 @@ class SyncWorker(
         if (applicationContext.getAutoSync() == false) return Result.success()
 
         val context = applicationContext
-        val useForegroundNotification = context.getForegroundServiceEnabled()
         val notificationManager = context.getSystemService(NotificationManager::class.java)
 
-        if (useForegroundNotification) {
-            setForeground(createForegroundInfo(notificationManager))
-        } else {
-            showSyncNotification(notificationManager)
-        }
+        setForeground(createForegroundInfo(notificationManager))
+        showSyncNotification(notificationManager)
 
         var attempt = 0
         var lastError: Exception? = null
@@ -155,9 +154,7 @@ class SyncWorker(
             )
             return Result.failure()
         } finally {
-            if (!useForegroundNotification) {
-                cancelSyncNotification(notificationManager)
-            }
+            cancelSyncNotification(notificationManager)
         }
     }
 
@@ -222,15 +219,16 @@ class SyncWorker(
     private fun createForegroundInfo(notificationManager: NotificationManager?): ForegroundInfo =
         ForegroundInfo(FOREGROUND_NOTIFICATION_ID, buildNotification(notificationManager))
 
-    private fun showSyncNotification(notificationManager: NotificationManager?) {
+    private fun showSyncNotification(notificationManager: NotificationManager?): Boolean {
         if (notificationManager == null) {
             Log.w(TAG, "NotificationManager not available; unable to display sync notification")
-            return
+            return false
         }
         notificationManager.notify(
             FOREGROUND_NOTIFICATION_ID,
             buildNotification(notificationManager),
         )
+        return true
     }
 
     private fun cancelSyncNotification(notificationManager: NotificationManager?) {
@@ -268,13 +266,9 @@ class SyncWorker(
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
 
-        val notificationText = context.getString(R.string.foreground_notification_text)
-
         return NotificationCompat
             .Builder(context, channelId)
-            .setContentTitle(context.getString(R.string.foreground_notification_title))
-            .setContentText(notificationText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(notificationText))
+            .setContentTitle(context.getString(R.string.syncing_notification_title))
             .setSmallIcon(R.drawable.ic_sync_24px)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)

@@ -30,17 +30,6 @@ import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
 import me.ayra.ha.healthconnect.utils.UiUtils.navigate
 
 class SettingsFragment : PreferenceFragmentCompat() {
-    private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            val preference = findPreference<SwitchPreferenceCompat>("foregroundService") ?: return@registerForActivityResult
-
-            if (isGranted || !requiresNotificationPermission()) {
-                preference.isChecked = true
-            } else {
-                preference.isChecked = false
-            }
-        }
-
     override fun onCreatePreferences(
         savedInstanceState: Bundle?,
         rootKey: String?,
@@ -59,18 +48,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun setupForegroundServicePreference() {
         val preference = findPreference<SwitchPreferenceCompat>("foregroundService") ?: return
-        preference.isChecked = context?.getForegroundServiceEnabled() ?: false
-        preference.setOnPreferenceChangeListener { _, newValue ->
-            val enabled = newValue as? Boolean ?: return@setOnPreferenceChangeListener false
-
-            if (enabled && !hasNotificationPermission()) {
-                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                return@setOnPreferenceChangeListener false
-            }
-
-            context?.setForegroundServiceEnabled(enabled)
-            true
-        }
+        val storedEnabled = context?.getForegroundServiceEnabled() ?: false
+        val resolvedEnabled = storedEnabled && hasNotificationPermission()
+        preference.isChecked = resolvedEnabled
+        // preference.setOnPreferenceChangeListener { _, newValue ->
+        // TODO
+        // }
     }
 
     private fun setupIntervalPreference() {

@@ -41,46 +41,50 @@ import me.ayra.ha.healthconnect.utils.healthConnectPermissions
 import kotlin.concurrent.thread
 
 class HomeFragment : Fragment() {
-
     private lateinit var backCallback: OnBackPressedCallback
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private lateinit var hc: HealthConnectManager
 
-    private val requestPermissions = registerForActivityResult(
-        PermissionController.createRequestPermissionResultContract()
-    ) { granted ->
-        if (granted.containsAll(healthConnectPermissions)) {
-            // All permissions granted
-        } else {
-            // Some permissions denied
+    private val requestPermissions =
+        registerForActivityResult(
+            PermissionController.createRequestPermissionResultContract(),
+        ) { granted ->
+            if (granted.containsAll(healthConnectPermissions)) {
+                // All permissions granted
+            } else {
+                // Some permissions denied
+            }
+            checkHcPermission()
+            checkLastError()
         }
-        checkHcPermission()
-        checkLastError()
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
-        backCallback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (shouldInterceptBackPress()) {
-                    requireActivity().moveTaskToBack(true)
-                } else {
-                    isEnabled = false
-                    requireActivity().onBackPressed()
+        backCallback =
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (shouldInterceptBackPress()) {
+                        requireActivity().moveTaskToBack(true)
+                    } else {
+                        isEnabled = false
+                        requireActivity().onBackPressed()
+                    }
                 }
             }
-        }
 
         requireActivity().onBackPressedDispatcher.addCallback(this, backCallback)
 
@@ -93,7 +97,16 @@ class HomeFragment : Fragment() {
             }
 
             val lastSyncSaved = context?.getLastSync() ?: 0
-            lastSync.text = getString(R.string.last_sync).format(if (lastSyncSaved <= 0) getString(R.string.never) else lastSyncSaved.toDate("dd/MM/yyyy HH.mm"))
+            lastSync.text =
+                getString(R.string.last_sync).format(
+                    if (lastSyncSaved <=
+                        0
+                    ) {
+                        getString(R.string.never)
+                    } else {
+                        lastSyncSaved.toDate("dd/MM/yyyy HH.mm")
+                    },
+                )
 
             val labels = resources.getStringArray(R.array.sync_intervals)
             val values = resources.getStringArray(R.array.sync_time)
@@ -126,19 +139,21 @@ class HomeFragment : Fragment() {
                         }
                         val healthData = health.getHealthData(hc)
                         context?.setSettings("health_data", healthData.toJson())
-                        val (isSuccess, message) = sendToHomeAssistant(
-                            healthData,
-                            entityId = context?.getSettings("sensor") ?: "health_connect",
-                            apiUrl = context?.getSettings("url") ?: return@ioSafe,
-                            apiToken = context?.getSettings("token") ?: return@ioSafe
-                        )
+                        val (isSuccess, message) =
+                            sendToHomeAssistant(
+                                healthData,
+                                entityId = context?.getSettings("sensor") ?: "health_connect",
+                                apiUrl = context?.getSettings("url") ?: return@ioSafe,
+                                apiToken = context?.getSettings("token") ?: return@ioSafe,
+                            )
                         main {
                             stopRotate(sync)
                             if (isSuccess) {
                                 context?.setLastSync(unixTimeMs)
                                 errorMessage.visibility = View.GONE
                                 sync.setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.ic_arrow_downward_24px))
-                                lastSync.text = getString(R.string.last_sync).format((context?.getLastSync() ?: 0).toDate("dd/MM/yyyy HH.mm"))
+                                lastSync.text =
+                                    getString(R.string.last_sync).format((context?.getLastSync() ?: 0).toDate("dd/MM/yyyy HH.mm"))
                                 showSuccess(getString(R.string.sync_success))
                                 context?.removeLastError()
                             } else {
@@ -176,7 +191,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun checkLastError() {
-        val lastError  = context?.getLastError()
+        val lastError = context?.getLastError()
         if (lastError != null) {
             main {
                 binding.apply {
