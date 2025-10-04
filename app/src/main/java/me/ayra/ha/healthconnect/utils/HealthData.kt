@@ -12,7 +12,7 @@ import me.ayra.ha.healthconnect.utils.TimeUtils.toTimeCount
 class HealthData(
     val context: Context,
     private var isUnavailable: Boolean = false,
-    private val unavailableReason: MutableList<String> = mutableListOf<String>()
+    private val unavailableReason: MutableList<String> = mutableListOf<String>(),
 ) {
     suspend fun getHealthData(hc: HealthConnectManager): MutableMap<String, Any?> {
         var healthData = mutableMapOf<String, Any?>()
@@ -56,15 +56,19 @@ class HealthData(
         return healthData
     }
 
-    private suspend fun getExerciseData(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
+    private suspend fun getExerciseData(
+        hc: HealthConnectManager,
+        days: Long,
+    ): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
-        val exerciseSessions = hc.getExerciseSessions(days)
-            ?: run {
-                isUnavailable = true
-                if (!unavailableReason.contains("exercise")) unavailableReason.add("exercise")
-                return null
-            }
+        val exerciseSessions =
+            hc.getExerciseSessions(days)
+                ?: run {
+                    isUnavailable = true
+                    if (!unavailableReason.contains("exercise")) unavailableReason.add("exercise")
+                    return null
+                }
 
         if (exerciseSessions.isEmpty()) {
             isUnavailable = true
@@ -75,14 +79,15 @@ class HealthData(
         exerciseSessions.forEach { session ->
             val date = dayTimestamp(session.startTime.epochSecond) ?: "unknown"
 
-            val sessionsList = resultMap.getOrPut(date) {
-                mutableMapOf(
-                    "totalSessions" to 0,
-                    "totalDuration" to 0L,
-                    "totalDurationFormatted" to 0L.toTimeCount(),
-                    "sessions" to mutableListOf<Map<String, Any?>>()
-                )
-            }["sessions"] as MutableList<Map<String, Any?>>
+            val sessionsList =
+                resultMap.getOrPut(date) {
+                    mutableMapOf(
+                        "totalSessions" to 0,
+                        "totalDuration" to 0L,
+                        "totalDurationFormatted" to 0L.toTimeCount(),
+                        "sessions" to mutableListOf<Map<String, Any?>>(),
+                    )
+                }["sessions"] as MutableList<Map<String, Any?>>
 
             val duration = session.endTime.epochSecond - session.startTime.epochSecond
 
@@ -96,15 +101,16 @@ class HealthData(
                     "exerciseName" to session.exerciseType.toExerciseName(),
                     "title" to session.title,
                     "notes" to session.notes,
-                    "segments" to session.segments.map {
-                        mapOf(
-                            "startTime" to it.startTime.epochSecond,
-                            "endTime" to it.endTime.epochSecond,
-                            "repetitions" to it.repetitions,
-                            "segmentType" to it.segmentType
-                        )
-                    }
-                )
+                    "segments" to
+                        session.segments.map {
+                            mapOf(
+                                "startTime" to it.startTime.epochSecond,
+                                "endTime" to it.endTime.epochSecond,
+                                "repetitions" to it.repetitions,
+                                "segmentType" to it.segmentType,
+                            )
+                        },
+                ),
             )
 
             resultMap[date]?.let { data ->
@@ -119,19 +125,23 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getStepsData(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
+    private suspend fun getStepsData(
+        hc: HealthConnectManager,
+        days: Long,
+    ): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
         // Process steps data
         hc.getSteps(days)?.forEach { record ->
             val date = dayTimestamp(record.startTime.epochSecond) ?: "unknown"
-            val dateData = resultMap.getOrPut(date) {
-                mutableMapOf(
-                    "startTime" to record.startTime.epochSecond,
-                    "endTime" to record.endTime.epochSecond,
-                    "count" to 0L
-                )
-            }
+            val dateData =
+                resultMap.getOrPut(date) {
+                    mutableMapOf(
+                        "startTime" to record.startTime.epochSecond,
+                        "endTime" to record.endTime.epochSecond,
+                        "count" to 0L,
+                    )
+                }
 
             val currentStartTime = dateData["startTime"] as Long
             val currentEndTime = dateData["endTime"] as Long
@@ -149,7 +159,10 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getWeightData(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
+    private suspend fun getWeightData(
+        hc: HealthConnectManager,
+        days: Long,
+    ): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<Long, Any>>()
 
         // Process weight data
@@ -168,7 +181,7 @@ class HealthData(
 
     private suspend fun getBodyTemperatureData(
         hc: HealthConnectManager,
-        days: Long
+        days: Long,
     ): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
@@ -176,12 +189,13 @@ class HealthData(
             val date = dayTimestamp(record.time.epochSecond) ?: "unknown"
             val dayData = resultMap.getOrPut(date) { mutableMapOf() }
 
-            dayData[record.time.epochSecond.toString()] = mapOf(
-                "time" to record.time.epochSecond,
-                "temperatureCelsius" to record.temperature.inCelsius,
-                "temperatureFahrenheit" to record.temperature.inFahrenheit,
-                "measurementLocation" to record.measurementLocation
-            )
+            dayData[record.time.epochSecond.toString()] =
+                mapOf(
+                    "time" to record.time.epochSecond,
+                    "temperatureCelsius" to record.temperature.inCelsius,
+                    "temperatureFahrenheit" to record.temperature.inFahrenheit,
+                    "measurementLocation" to record.measurementLocation,
+                )
         }
 
         if (resultMap.isEmpty()) {
@@ -195,12 +209,16 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getSleepData(hc: HealthConnectManager, days: Long): Map<String, Any>? {
-        val data = hc.getSleep(days) ?: run {
-            isUnavailable = true
-            if (!unavailableReason.contains("sleep")) unavailableReason.add("sleep")
-            return null
-        }
+    private suspend fun getSleepData(
+        hc: HealthConnectManager,
+        days: Long,
+    ): Map<String, Any>? {
+        val data =
+            hc.getSleep(days) ?: run {
+                isUnavailable = true
+                if (!unavailableReason.contains("sleep")) unavailableReason.add("sleep")
+                return null
+            }
 
         val lastSleep = hc.getLastSleep()
 
@@ -238,11 +256,12 @@ class HealthData(
                 updateSleepStages(sleepStages, stage, totalSessionDuration)
             }
 
-            sleepSessionData[date] = mapOf(
-                "start" to session.startTime.epochSecond,
-                "end" to session.endTime.epochSecond,
-                "stage" to sleepStages.values.toList()
-            )
+            sleepSessionData[date] =
+                mapOf(
+                    "start" to session.startTime.epochSecond,
+                    "end" to session.endTime.epochSecond,
+                    "stage" to sleepStages.values.toList(),
+                )
         }
 
         totalSleepTime = 0L
@@ -278,11 +297,12 @@ class HealthData(
                 updateSleepStages(sleepStages, stage, totalSessionDuration)
             }
 
-            sleepSessionData["lastSleep"] = mapOf(
-                "start" to session.startTime.epochSecond,
-                "end" to session.endTime.epochSecond,
-                "stage" to sleepStages.values.toList()
-            )
+            sleepSessionData["lastSleep"] =
+                mapOf(
+                    "start" to session.startTime.epochSecond,
+                    "end" to session.endTime.epochSecond,
+                    "stage" to sleepStages.values.toList(),
+                )
         }
 
         return if (sleepSessionData.isEmpty()) {
@@ -295,35 +315,37 @@ class HealthData(
     private fun updateSleepStages(
         sleepStages: MutableMap<Int, MutableMap<String, Any>>,
         stage: SleepSessionRecord.Stage,
-        totalSessionDuration: Long
+        totalSessionDuration: Long,
     ) {
         val duration = stage.endTime.epochSecond - stage.startTime.epochSecond
 
-        val stageData = sleepStages.getOrPut(stage.stage) {
-            mutableMapOf(
-                "stage" to stage.stage.toString(),
-                "stageFormat" to stage.stage.toSleepStageText(),
-                "percentage" to 0.0,
-                "occurrences" to 0,
-                "sessions" to mutableListOf<Map<String, Long>>()
-            )
-        }
+        val stageData =
+            sleepStages.getOrPut(stage.stage) {
+                mutableMapOf(
+                    "stage" to stage.stage.toString(),
+                    "stageFormat" to stage.stage.toSleepStageText(),
+                    "percentage" to 0.0,
+                    "occurrences" to 0,
+                    "sessions" to mutableListOf<Map<String, Long>>(),
+                )
+            }
 
         val currentTime = (stageData["time"] as? Long) ?: 0L
         val newTime = currentTime + duration
-        val percentage = if (totalSessionDuration > 0) {
-            (newTime.toDouble() / totalSessionDuration) * 100
-        } else {
-            0.0
-        }
+        val percentage =
+            if (totalSessionDuration > 0) {
+                (newTime.toDouble() / totalSessionDuration) * 100
+            } else {
+                0.0
+            }
 
         val sessions = stageData["sessions"] as? MutableList<Map<String, Long>> ?: mutableListOf()
         sessions.add(
             mapOf(
                 "duration" to duration,
                 "startTime" to stage.startTime.epochSecond,
-                "endTime" to stage.endTime.epochSecond
-            )
+                "endTime" to stage.endTime.epochSecond,
+            ),
         )
 
         stageData["totalTime"] = newTime
@@ -333,7 +355,10 @@ class HealthData(
         stageData["sessions"] = sessions
     }
 
-    private suspend fun getHeartRateData(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
+    private suspend fun getHeartRateData(
+        hc: HealthConnectManager,
+        days: Long,
+    ): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
         hc.getHeartRate(days)?.forEach { record ->
@@ -348,8 +373,8 @@ class HealthData(
                     sample.time.epochSecond.toString(),
                     mapOf(
                         "time" to sample.time.epochSecond,
-                        "bpm" to sample.beatsPerMinute
-                    )
+                        "bpm" to sample.beatsPerMinute,
+                    ),
                 )
             }
         }
@@ -363,7 +388,10 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getOxygenSaturation(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
+    private suspend fun getOxygenSaturation(
+        hc: HealthConnectManager,
+        days: Long,
+    ): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
         hc.getOxygenSaturation(days)?.forEach { record ->
@@ -375,7 +403,7 @@ class HealthData(
 
             resultMap[date]?.put(
                 record.time.epochSecond.toString(),
-                record.percentage.value
+                record.percentage.value,
             )
         }
 
@@ -388,7 +416,10 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getHydrationRecord(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
+    private suspend fun getHydrationRecord(
+        hc: HealthConnectManager,
+        days: Long,
+    ): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
         hc.getHydrationRecord(days)?.forEach { record ->
@@ -411,7 +442,10 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getTotalCaloriesBurned(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
+    private suspend fun getTotalCaloriesBurned(
+        hc: HealthConnectManager,
+        days: Long,
+    ): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
         hc.getTotalCaloriesBurned(days)?.forEach { record ->
@@ -435,5 +469,4 @@ class HealthData(
 
         return resultMap
     }
-
 }

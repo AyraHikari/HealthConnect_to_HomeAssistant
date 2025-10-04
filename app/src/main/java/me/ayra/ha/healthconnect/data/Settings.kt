@@ -15,46 +15,47 @@ const val DEFAULT_SYNC_DAYS = 7L
 object Settings {
     data class SyncError(
         val timestamp: Long,
-        val message: String
+        val message: String,
     )
 
-    fun Context.getSettings(path: String): String? {
-        return getKey<String>(DATA, path)
-    }
-    fun Context.setSettings(path: String, value: String) {
-        return setKey(DATA, path, value)
+    fun Context.getSettings(path: String): String? = getKey<String>(DATA, path)
+
+    fun Context.setSettings(
+        path: String,
+        value: String,
+    ) = setKey(DATA, path, value)
+
+    fun Context.getSettings(
+        path: String,
+        default: Boolean,
+    ): Boolean? = getKey<Boolean>(DATA, path, default)
+
+    fun Context.setSettings(
+        path: String,
+        value: Boolean,
+    ) = setKey(DATA, path, value)
+
+    fun Context.getForegroundServiceEnabled(): Boolean = getSettings("foregroundService", false) ?: false
+
+    fun Context.setForegroundServiceEnabled(value: Boolean) {
+        setSettings("foregroundService", value)
     }
 
-    fun Context.getSettings(path: String, default: Boolean): Boolean? {
-        return getKey<Boolean>(DATA, path, default)
-    }
-    fun Context.setSettings(path: String, value: Boolean) {
-        return setKey(DATA, path, value)
-    }
+    fun Context.getLastSync(): Long? = getKey<Long>(DATA, "lastSync")
 
-    fun Context.getLastSync(): Long? {
-        return getKey<Long>(DATA, "lastSync")
-    }
-    fun Context.setLastSync(value: Long) {
-        return setKey(DATA, "lastSync", value)
-    }
+    fun Context.setLastSync(value: Long) = setKey(DATA, "lastSync", value)
 
-    fun Context.getLastError(): SyncError? {
-        return tryParseJson(getKey<String>(DATA, "lastError"))
-    }
-    fun Context.setLastError(value: SyncError) {
-        return setKey(DATA, "lastError", value.toJson())
-    }
+    fun Context.getLastError(): SyncError? = tryParseJson(getKey<String>(DATA, "lastError"))
+
+    fun Context.setLastError(value: SyncError) = setKey(DATA, "lastError", value.toJson())
+
     fun Context.removeLastError() {
         removeKey(DATA, "lastError")
     }
 
-    fun Context.getAutoSync(): Boolean? {
-        return getKey<Boolean>(DATA, "AutoSync", true)
-    }
-    fun Context.setAutoSync(value: Boolean) {
-        return setKey(DATA, "AutoSync", value)
-    }
+    fun Context.getAutoSync(): Boolean? = getKey<Boolean>(DATA, "AutoSync", true)
+
+    fun Context.setAutoSync(value: Boolean) = setKey(DATA, "AutoSync", value)
 
     fun Context.getSyncDays(): Long {
         val storedValue = getSettings("syncDays")?.toLongOrNull()

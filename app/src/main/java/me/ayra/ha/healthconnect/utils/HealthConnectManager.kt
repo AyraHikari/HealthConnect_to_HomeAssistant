@@ -51,60 +51,59 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-val healthConnectPermissions = setOf(
-    HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND,
-    HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
-    HealthPermission.getReadPermission(BasalBodyTemperatureRecord::class),
-    HealthPermission.getReadPermission(BloodGlucoseRecord::class),
-    HealthPermission.getReadPermission(BloodPressureRecord::class),
-    HealthPermission.getReadPermission(BasalMetabolicRateRecord::class),
-    HealthPermission.getReadPermission(BodyFatRecord::class),
-    HealthPermission.getReadPermission(BodyTemperatureRecord::class),
-    HealthPermission.getReadPermission(BoneMassRecord::class),
-    HealthPermission.getReadPermission(CyclingPedalingCadenceRecord::class),
-    HealthPermission.getReadPermission(CervicalMucusRecord::class),
-    HealthPermission.getReadPermission(ExerciseSessionRecord::class),
-    HealthPermission.getReadPermission(DistanceRecord::class),
-    HealthPermission.getReadPermission(ElevationGainedRecord::class),
-    HealthPermission.getReadPermission(FloorsClimbedRecord::class),
-    HealthPermission.getReadPermission(HeartRateRecord::class),
-    HealthPermission.getReadPermission(HeightRecord::class),
-    HealthPermission.getReadPermission(HydrationRecord::class),
-    HealthPermission.getReadPermission(LeanBodyMassRecord::class),
-    HealthPermission.getReadPermission(MenstruationFlowRecord::class),
-    HealthPermission.getReadPermission(MenstruationPeriodRecord::class),
-    HealthPermission.getReadPermission(NutritionRecord::class),
-    HealthPermission.getReadPermission(OvulationTestRecord::class),
-    HealthPermission.getReadPermission(OxygenSaturationRecord::class),
-    HealthPermission.getReadPermission(PowerRecord::class),
-    HealthPermission.getReadPermission(RespiratoryRateRecord::class),
-    HealthPermission.getReadPermission(RestingHeartRateRecord::class),
-    HealthPermission.getReadPermission(SleepSessionRecord::class),
-    HealthPermission.getReadPermission(SpeedRecord::class),
-    HealthPermission.getReadPermission(StepsRecord::class),
-    HealthPermission.getReadPermission(StepsCadenceRecord::class),
-    HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
-    HealthPermission.getReadPermission(Vo2MaxRecord::class),
-    HealthPermission.getReadPermission(WeightRecord::class),
-    HealthPermission.getReadPermission(WheelchairPushesRecord::class)
-)
+val healthConnectPermissions =
+    setOf(
+        HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND,
+        HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
+        HealthPermission.getReadPermission(BasalBodyTemperatureRecord::class),
+        HealthPermission.getReadPermission(BloodGlucoseRecord::class),
+        HealthPermission.getReadPermission(BloodPressureRecord::class),
+        HealthPermission.getReadPermission(BasalMetabolicRateRecord::class),
+        HealthPermission.getReadPermission(BodyFatRecord::class),
+        HealthPermission.getReadPermission(BodyTemperatureRecord::class),
+        HealthPermission.getReadPermission(BoneMassRecord::class),
+        HealthPermission.getReadPermission(CyclingPedalingCadenceRecord::class),
+        HealthPermission.getReadPermission(CervicalMucusRecord::class),
+        HealthPermission.getReadPermission(ExerciseSessionRecord::class),
+        HealthPermission.getReadPermission(DistanceRecord::class),
+        HealthPermission.getReadPermission(ElevationGainedRecord::class),
+        HealthPermission.getReadPermission(FloorsClimbedRecord::class),
+        HealthPermission.getReadPermission(HeartRateRecord::class),
+        HealthPermission.getReadPermission(HeightRecord::class),
+        HealthPermission.getReadPermission(HydrationRecord::class),
+        HealthPermission.getReadPermission(LeanBodyMassRecord::class),
+        HealthPermission.getReadPermission(MenstruationFlowRecord::class),
+        HealthPermission.getReadPermission(MenstruationPeriodRecord::class),
+        HealthPermission.getReadPermission(NutritionRecord::class),
+        HealthPermission.getReadPermission(OvulationTestRecord::class),
+        HealthPermission.getReadPermission(OxygenSaturationRecord::class),
+        HealthPermission.getReadPermission(PowerRecord::class),
+        HealthPermission.getReadPermission(RespiratoryRateRecord::class),
+        HealthPermission.getReadPermission(RestingHeartRateRecord::class),
+        HealthPermission.getReadPermission(SleepSessionRecord::class),
+        HealthPermission.getReadPermission(SpeedRecord::class),
+        HealthPermission.getReadPermission(StepsRecord::class),
+        HealthPermission.getReadPermission(StepsCadenceRecord::class),
+        HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
+        HealthPermission.getReadPermission(Vo2MaxRecord::class),
+        HealthPermission.getReadPermission(WeightRecord::class),
+        HealthPermission.getReadPermission(WheelchairPushesRecord::class),
+    )
 
-class HealthConnectManager(private val context: Context) {
+class HealthConnectManager(
+    private val context: Context,
+) {
     private val healthConnectClient by lazy { HealthConnectClient.getOrCreate(context) }
 
-    fun getPermissions(): Set<String> {
-        return healthConnectPermissions
-    }
+    fun getPermissions(): Set<String> = healthConnectPermissions
 
-    suspend fun hasAllPermissions(): Boolean {
-        return healthConnectClient.permissionController.getGrantedPermissions().containsAll(
-            healthConnectPermissions
+    suspend fun hasAllPermissions(): Boolean =
+        healthConnectClient.permissionController.getGrantedPermissions().containsAll(
+            healthConnectPermissions,
         )
-    }
 
-    fun requestPermissionsActivityContract(): ActivityResultContract<Set<String>, Set<String>> {
-        return PermissionController.createRequestPermissionResultContract()
-    }
+    fun requestPermissionsActivityContract(): ActivityResultContract<Set<String>, Set<String>> =
+        PermissionController.createRequestPermissionResultContract()
 
     suspend fun getHeartRate(days: Long = DEFAULT_SYNC_DAYS): List<HeartRateRecord>? {
         val currentZoneId = ZoneId.systemDefault()
@@ -112,13 +111,17 @@ class HealthConnectManager(private val context: Context) {
         val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
-        val fetchedData = try {
-            val request = ReadRecordsRequest(recordType = HeartRateRecord::class,
-                timeRangeFilter = timeRange)
-            healthConnectClient.readRecords(request)
-        } catch (e: Exception) {
-            return null
-        }
+        val fetchedData =
+            try {
+                val request =
+                    ReadRecordsRequest(
+                        recordType = HeartRateRecord::class,
+                        timeRangeFilter = timeRange,
+                    )
+                healthConnectClient.readRecords(request)
+            } catch (e: Exception) {
+                return null
+            }
         return fetchedData.records
     }
 
@@ -128,13 +131,17 @@ class HealthConnectManager(private val context: Context) {
         val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
-        val fetchedData = try {
-            val request = ReadRecordsRequest(recordType = SleepSessionRecord::class,
-                timeRangeFilter = timeRange)
-            healthConnectClient.readRecords(request)
-        } catch (e: Exception) {
-            return null
-        }
+        val fetchedData =
+            try {
+                val request =
+                    ReadRecordsRequest(
+                        recordType = SleepSessionRecord::class,
+                        timeRangeFilter = timeRange,
+                    )
+                healthConnectClient.readRecords(request)
+            } catch (e: Exception) {
+                return null
+            }
         return fetchedData.records
     }
 
@@ -143,27 +150,30 @@ class HealthConnectManager(private val context: Context) {
         val currentTime = LocalDateTime.now()
 
         // Setting the start of the "last night" period at 20:00
-        val lastNight20 = currentTime
-            .withHour(20)
-            .withMinute(0)
-            .withSecond(0)
-            .minusDays(if (currentTime.hour < 20) 1 else 0)
-            .atZone(ZoneId.systemDefault())
-            .toInstant()
+        val lastNight20 =
+            currentTime
+                .withHour(20)
+                .withMinute(0)
+                .withSecond(0)
+                .minusDays(if (currentTime.hour < 20) 1 else 0)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
 
         // Creating the time range between last night at 20:00 and now
         val timeRange = TimeRangeFilter.between(lastNight20, now)
 
         // Fetch sleep records between lastNight20 and now
-        val fetchedData = try {
-            val request = ReadRecordsRequest(
-                recordType = SleepSessionRecord::class,
-                timeRangeFilter = timeRange
-            )
-            healthConnectClient.readRecords(request)
-        } catch (e: Exception) {
-            return null
-        }
+        val fetchedData =
+            try {
+                val request =
+                    ReadRecordsRequest(
+                        recordType = SleepSessionRecord::class,
+                        timeRangeFilter = timeRange,
+                    )
+                healthConnectClient.readRecords(request)
+            } catch (e: Exception) {
+                return null
+            }
 
         // If data is found, return it
         if (fetchedData.records.isNotEmpty()) {
@@ -171,21 +181,28 @@ class HealthConnectManager(private val context: Context) {
         }
 
         // If no data found, fallback to check for today until tomorrow at 00:00
-        val todayStart = currentTime.withHour(0).withMinute(0).withSecond(0)
-            .atZone(ZoneId.systemDefault()).toInstant()
+        val todayStart =
+            currentTime
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
         val tomorrowStart = todayStart.plusSeconds(86400) // Adding 24 hours to get tomorrow start
 
         val fallbackTimeRange = TimeRangeFilter.between(todayStart, tomorrowStart)
 
-        val fallbackData = try {
-            val fallbackRequest = ReadRecordsRequest(
-                recordType = SleepSessionRecord::class,
-                timeRangeFilter = fallbackTimeRange
-            )
-            healthConnectClient.readRecords(fallbackRequest)
-        } catch (e: Exception) {
-            return null
-        }
+        val fallbackData =
+            try {
+                val fallbackRequest =
+                    ReadRecordsRequest(
+                        recordType = SleepSessionRecord::class,
+                        timeRangeFilter = fallbackTimeRange,
+                    )
+                healthConnectClient.readRecords(fallbackRequest)
+            } catch (e: Exception) {
+                return null
+            }
 
         return fallbackData.records
     }
@@ -196,13 +213,17 @@ class HealthConnectManager(private val context: Context) {
         val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
-        val fetchedData = try {
-            val request = ReadRecordsRequest(recordType = StepsRecord::class,
-                timeRangeFilter = timeRange)
-            healthConnectClient.readRecords(request)
-        } catch (e: Exception) {
-            return null
-        }
+        val fetchedData =
+            try {
+                val request =
+                    ReadRecordsRequest(
+                        recordType = StepsRecord::class,
+                        timeRangeFilter = timeRange,
+                    )
+                healthConnectClient.readRecords(request)
+            } catch (e: Exception) {
+                return null
+            }
         return fetchedData.records
     }
 
@@ -212,14 +233,18 @@ class HealthConnectManager(private val context: Context) {
         val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
-        val fetchedData = try {
-            val request = ReadRecordsRequest(recordType = WeightRecord::class,
-                timeRangeFilter = timeRange)
-            healthConnectClient.readRecords(request)
-        } catch (e: Exception) {
-            Log.e("HealthConnect", e.message.toString())
-            return null
-        }
+        val fetchedData =
+            try {
+                val request =
+                    ReadRecordsRequest(
+                        recordType = WeightRecord::class,
+                        timeRangeFilter = timeRange,
+                    )
+                healthConnectClient.readRecords(request)
+            } catch (e: Exception) {
+                Log.e("HealthConnect", e.message.toString())
+                return null
+            }
         return fetchedData.records
     }
 
@@ -229,15 +254,17 @@ class HealthConnectManager(private val context: Context) {
         val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
-        val fetchedData = try {
-            val request = ReadRecordsRequest(
-                recordType = ExerciseSessionRecord::class,
-                timeRangeFilter = timeRange
-            )
-            healthConnectClient.readRecords(request)
-        } catch (e: Exception) {
-            return null
-        }
+        val fetchedData =
+            try {
+                val request =
+                    ReadRecordsRequest(
+                        recordType = ExerciseSessionRecord::class,
+                        timeRangeFilter = timeRange,
+                    )
+                healthConnectClient.readRecords(request)
+            } catch (e: Exception) {
+                return null
+            }
         return fetchedData.records
     }
 
@@ -247,15 +274,17 @@ class HealthConnectManager(private val context: Context) {
         val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
-        val fetchedData = try {
-            val request = ReadRecordsRequest(
-                recordType = OxygenSaturationRecord::class,
-                timeRangeFilter = timeRange
-            )
-            healthConnectClient.readRecords(request)
-        } catch (e: Exception) {
-            return null
-        }
+        val fetchedData =
+            try {
+                val request =
+                    ReadRecordsRequest(
+                        recordType = OxygenSaturationRecord::class,
+                        timeRangeFilter = timeRange,
+                    )
+                healthConnectClient.readRecords(request)
+            } catch (e: Exception) {
+                return null
+            }
         return fetchedData.records
     }
 
@@ -265,15 +294,17 @@ class HealthConnectManager(private val context: Context) {
         val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
-        val fetchedData = try {
-            val request = ReadRecordsRequest(
-                recordType = HydrationRecord::class,
-                timeRangeFilter = timeRange
-            )
-            healthConnectClient.readRecords(request)
-        } catch (e: Exception) {
-            return null
-        }
+        val fetchedData =
+            try {
+                val request =
+                    ReadRecordsRequest(
+                        recordType = HydrationRecord::class,
+                        timeRangeFilter = timeRange,
+                    )
+                healthConnectClient.readRecords(request)
+            } catch (e: Exception) {
+                return null
+            }
         return fetchedData.records
     }
 
@@ -283,15 +314,17 @@ class HealthConnectManager(private val context: Context) {
         val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
-        val fetchedData = try {
-            val request = ReadRecordsRequest(
-                recordType = BodyTemperatureRecord::class,
-                timeRangeFilter = timeRange
-            )
-            healthConnectClient.readRecords(request)
-        } catch (e: Exception) {
-            return null
-        }
+        val fetchedData =
+            try {
+                val request =
+                    ReadRecordsRequest(
+                        recordType = BodyTemperatureRecord::class,
+                        timeRangeFilter = timeRange,
+                    )
+                healthConnectClient.readRecords(request)
+            } catch (e: Exception) {
+                return null
+            }
         return fetchedData.records
     }
 
@@ -302,10 +335,11 @@ class HealthConnectManager(private val context: Context) {
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
         return try {
-            val request = ReadRecordsRequest(
-                recordType = TotalCaloriesBurnedRecord::class,
-                timeRangeFilter = timeRange
-            )
+            val request =
+                ReadRecordsRequest(
+                    recordType = TotalCaloriesBurnedRecord::class,
+                    timeRangeFilter = timeRange,
+                )
             healthConnectClient.readRecords(request).records
         } catch (e: Exception) {
             null
@@ -320,49 +354,51 @@ class HealthConnectManager(private val context: Context) {
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
 
         // Map of record type names to their corresponding record classes
-        val recordTypes = mapOf(
-            "ActiveCaloriesBurned" to ActiveCaloriesBurnedRecord::class,
-            "BasalBodyTemperature" to BasalBodyTemperatureRecord::class,
-            "BloodGlucose" to BloodGlucoseRecord::class,
-            "BloodPressure" to BloodPressureRecord::class,
-            "BasalMetabolicRate" to BasalMetabolicRateRecord::class,
-            "BodyFat" to BodyFatRecord::class,
-            "BodyTemperature" to BodyTemperatureRecord::class,
-            "BoneMass" to BoneMassRecord::class,
-            "CyclingPedalingCadence" to CyclingPedalingCadenceRecord::class,
-            "CervicalMucus" to CervicalMucusRecord::class,
-            "ExerciseSession" to ExerciseSessionRecord::class,
-            "Distance" to DistanceRecord::class,
-            "ElevationGained" to ElevationGainedRecord::class,
-            "FloorsClimbed" to FloorsClimbedRecord::class,
-            "HeartRate" to HeartRateRecord::class,
-            "Height" to HeightRecord::class,
-            "Hydration" to HydrationRecord::class,
-            "LeanBodyMass" to LeanBodyMassRecord::class,
-            "MenstruationFlow" to MenstruationFlowRecord::class,
-            "MenstruationPeriod" to MenstruationPeriodRecord::class,
-            "Nutrition" to NutritionRecord::class,
-            "OvulationTest" to OvulationTestRecord::class,
-            "OxygenSaturation" to OxygenSaturationRecord::class,
-            "Power" to PowerRecord::class,
-            "RespiratoryRate" to RespiratoryRateRecord::class,
-            "RestingHeartRate" to RestingHeartRateRecord::class,
-            "SleepSession" to SleepSessionRecord::class,
-            "Speed" to SpeedRecord::class,
-            "Steps" to StepsRecord::class,
-            "StepsCadence" to StepsCadenceRecord::class,
-            "TotalCaloriesBurned" to TotalCaloriesBurnedRecord::class,
-            "Vo2Max" to Vo2MaxRecord::class,
-            "Weight" to WeightRecord::class,
-            "WheelchairPushes" to WheelchairPushesRecord::class
-        )
+        val recordTypes =
+            mapOf(
+                "ActiveCaloriesBurned" to ActiveCaloriesBurnedRecord::class,
+                "BasalBodyTemperature" to BasalBodyTemperatureRecord::class,
+                "BloodGlucose" to BloodGlucoseRecord::class,
+                "BloodPressure" to BloodPressureRecord::class,
+                "BasalMetabolicRate" to BasalMetabolicRateRecord::class,
+                "BodyFat" to BodyFatRecord::class,
+                "BodyTemperature" to BodyTemperatureRecord::class,
+                "BoneMass" to BoneMassRecord::class,
+                "CyclingPedalingCadence" to CyclingPedalingCadenceRecord::class,
+                "CervicalMucus" to CervicalMucusRecord::class,
+                "ExerciseSession" to ExerciseSessionRecord::class,
+                "Distance" to DistanceRecord::class,
+                "ElevationGained" to ElevationGainedRecord::class,
+                "FloorsClimbed" to FloorsClimbedRecord::class,
+                "HeartRate" to HeartRateRecord::class,
+                "Height" to HeightRecord::class,
+                "Hydration" to HydrationRecord::class,
+                "LeanBodyMass" to LeanBodyMassRecord::class,
+                "MenstruationFlow" to MenstruationFlowRecord::class,
+                "MenstruationPeriod" to MenstruationPeriodRecord::class,
+                "Nutrition" to NutritionRecord::class,
+                "OvulationTest" to OvulationTestRecord::class,
+                "OxygenSaturation" to OxygenSaturationRecord::class,
+                "Power" to PowerRecord::class,
+                "RespiratoryRate" to RespiratoryRateRecord::class,
+                "RestingHeartRate" to RestingHeartRateRecord::class,
+                "SleepSession" to SleepSessionRecord::class,
+                "Speed" to SpeedRecord::class,
+                "Steps" to StepsRecord::class,
+                "StepsCadence" to StepsCadenceRecord::class,
+                "TotalCaloriesBurned" to TotalCaloriesBurnedRecord::class,
+                "Vo2Max" to Vo2MaxRecord::class,
+                "Weight" to WeightRecord::class,
+                "WheelchairPushes" to WheelchairPushesRecord::class,
+            )
 
         return recordTypes.mapValues { (_, recordClass) ->
             try {
-                val request = ReadRecordsRequest(
-                    recordType = recordClass,
-                    timeRangeFilter = timeRange
-                )
+                val request =
+                    ReadRecordsRequest(
+                        recordType = recordClass,
+                        timeRangeFilter = timeRange,
+                    )
                 healthConnectClient.readRecords(request).records
             } catch (e: Exception) {
                 null
@@ -371,6 +407,4 @@ class HealthConnectManager(private val context: Context) {
     }
 }
 
-private fun sanitizeDays(days: Long): Long {
-    return days.coerceIn(MIN_SYNC_DAYS, MAX_SYNC_DAYS)
-}
+private fun sanitizeDays(days: Long): Long = days.coerceIn(MIN_SYNC_DAYS, MAX_SYNC_DAYS)

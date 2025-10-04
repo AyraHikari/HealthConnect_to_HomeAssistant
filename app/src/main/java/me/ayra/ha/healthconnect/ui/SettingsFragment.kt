@@ -8,6 +8,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -15,25 +16,40 @@ import me.ayra.ha.healthconnect.R
 import me.ayra.ha.healthconnect.data.DEFAULT_SYNC_DAYS
 import me.ayra.ha.healthconnect.data.MAX_SYNC_DAYS
 import me.ayra.ha.healthconnect.data.MIN_SYNC_DAYS
+import me.ayra.ha.healthconnect.data.Settings.getForegroundServiceEnabled
 import me.ayra.ha.healthconnect.data.Settings.getSettings
 import me.ayra.ha.healthconnect.data.Settings.getSyncDays
+import me.ayra.ha.healthconnect.data.Settings.setForegroundServiceEnabled
 import me.ayra.ha.healthconnect.data.Settings.setSettings
 import me.ayra.ha.healthconnect.data.Settings.setSyncDays
 import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
 import me.ayra.ha.healthconnect.utils.UiUtils.navigate
 
 class SettingsFragment : PreferenceFragmentCompat() {
-
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+    override fun onCreatePreferences(
+        savedInstanceState: Bundle?,
+        rootKey: String?,
+    ) {
         setPreferencesFromResource(R.xml.preferences, rootKey)
 
         setupIntervalPreference()
         setupSyncDaysPreference()
+        setupForegroundServicePreference()
         setupUrlPreference()
         setupTokenPreference()
         setupSensorEntityPreference()
         setupHealthDataPreference()
         setupAboutPreference()
+    }
+
+    private fun setupForegroundServicePreference() {
+        val preference = findPreference<SwitchPreferenceCompat>("foregroundService") ?: return
+        preference.isChecked = context?.getForegroundServiceEnabled() ?: false
+        preference.setOnPreferenceChangeListener { _, newValue ->
+            val enabled = newValue as? Boolean ?: return@setOnPreferenceChangeListener false
+            context?.setForegroundServiceEnabled(enabled)
+            true
+        }
     }
 
     private fun setupIntervalPreference() {
@@ -54,8 +70,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     val selectedValue = values.getOrNull(which) ?: return@setItems
                     context?.setSettings("updateInterval", selectedValue)
                     intervalPreference.summary = selectedLabel
-                }
-                .setNegativeButton(R.string.cancel, null)
+                }.setNegativeButton(R.string.cancel, null)
                 .show()
             true
         }
@@ -119,9 +134,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun setupAboutPreference() {
         findPreference<Preference>("app_version")?.apply {
             try {
-                val versionName = requireContext().packageManager
-                    .getPackageInfo(requireContext().packageName, 0)
-                    .versionName
+                val versionName =
+                    requireContext()
+                        .packageManager
+                        .getPackageInfo(requireContext().packageName, 0)
+                        .versionName
                 summary = getString(R.string.version_format, versionName)
             } catch (e: Exception) {
                 summary = getString(R.string.version_unknown)
@@ -134,56 +151,66 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
-    private fun showInputDialog(key: String, title: String, initialValue: String?) {
+    private fun showInputDialog(
+        key: String,
+        title: String,
+        initialValue: String?,
+    ) {
         val context = context ?: return
         isSettingsUpdate = true
 
-        val inputEditText = TextInputEditText(context).apply {
-            setText(initialValue)
-            when (key) {
-                "url" -> {
-                    hint = getString(R.string.url_hint)
-                    inputType = InputType.TYPE_TEXT_VARIATION_URI
-                }
-                "token" -> {
-                    hint = getString(R.string.token_hint)
-                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                }
-                "sensor" -> {
-                    hint = getString(R.string.sensor_hint)
-                    inputType = InputType.TYPE_CLASS_TEXT
-                    filters = arrayOf(InputFilter { source, start, end, dest, dstart, dend ->
-                        val regex = Regex("^[a-zA-Z0-9_]*$")
-                        if (source.isNullOrBlank() || regex.matches(source)) {
-                            null  // Accept the input
-                        } else {
-                            ""  // Reject the input
-                        }
-                    })
-                }
-                "syncDays" -> {
-                    hint = getString(R.string.sync_days_hint)
-                    inputType = InputType.TYPE_CLASS_NUMBER
+        val inputEditText =
+            TextInputEditText(context).apply {
+                setText(initialValue)
+                when (key) {
+                    "url" -> {
+                        hint = getString(R.string.url_hint)
+                        inputType = InputType.TYPE_TEXT_VARIATION_URI
+                    }
+                    "token" -> {
+                        hint = getString(R.string.token_hint)
+                        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    }
+                    "sensor" -> {
+                        hint = getString(R.string.sensor_hint)
+                        inputType = InputType.TYPE_CLASS_TEXT
+                        filters =
+                            arrayOf(
+                                InputFilter { source, start, end, dest, dstart, dend ->
+                                    val regex = Regex("^[a-zA-Z0-9_]*$")
+                                    if (source.isNullOrBlank() || regex.matches(source)) {
+                                        null // Accept the input
+                                    } else {
+                                        "" // Reject the input
+                                    }
+                                },
+                            )
+                    }
+                    "syncDays" -> {
+                        hint = getString(R.string.sync_days_hint)
+                        inputType = InputType.TYPE_CLASS_NUMBER
+                    }
                 }
             }
-        }
 
-        val inputLayout = TextInputLayout(context).apply {
-            addView(inputEditText)
-            setPadding(
-                resources.getDimensionPixelOffset(R.dimen.dialog_padding),
-                0,
-                resources.getDimensionPixelOffset(R.dimen.dialog_padding),
-                0
-            )
-        }
+        val inputLayout =
+            TextInputLayout(context).apply {
+                addView(inputEditText)
+                setPadding(
+                    resources.getDimensionPixelOffset(R.dimen.dialog_padding),
+                    0,
+                    resources.getDimensionPixelOffset(R.dimen.dialog_padding),
+                    0,
+                )
+            }
 
-        val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle(title)
-            .setView(inputLayout)
-            .setPositiveButton(getString(R.string.save), null)  // Set to null initially
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
+        val dialog =
+            MaterialAlertDialogBuilder(context)
+                .setTitle(title)
+                .setView(inputLayout)
+                .setPositiveButton(getString(R.string.save), null) // Set to null initially
+                .setNegativeButton(getString(R.string.cancel), null)
+                .create()
 
         dialog.setOnShowListener {
             val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
@@ -218,13 +245,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         context.setSettings(key, newValue)
                         when (key) {
                             "url" -> findPreference<Preference>("haUrl")?.summary = newValue
-                            "token" -> findPreference<Preference>("haToken")?.let { pref ->
-                                pref.summary = if (newValue.length > 4) {
-                                    "••••${newValue.takeLast(4)}"
-                                } else {
-                                    "••••"
+                            "token" ->
+                                findPreference<Preference>("haToken")?.let { pref ->
+                                    pref.summary =
+                                        if (newValue.length > 4) {
+                                            "••••${newValue.takeLast(4)}"
+                                        } else {
+                                            "••••"
+                                        }
                                 }
-                            }
                             "sensor" -> findPreference<Preference>("sensorEntity")?.summary = newValue
                         }
                         dialog.dismiss()
