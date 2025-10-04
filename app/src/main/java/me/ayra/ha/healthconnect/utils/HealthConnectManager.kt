@@ -43,6 +43,9 @@ import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.WheelchairPushesRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
+import me.ayra.ha.healthconnect.data.DEFAULT_SYNC_DAYS
+import me.ayra.ha.healthconnect.data.MAX_SYNC_DAYS
+import me.ayra.ha.healthconnect.data.MIN_SYNC_DAYS
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -103,10 +106,10 @@ class HealthConnectManager(private val context: Context) {
         return PermissionController.createRequestPermissionResultContract()
     }
 
-    suspend fun getHeartRate(days: Long = 7): List<HeartRateRecord>? {
+    suspend fun getHeartRate(days: Long = DEFAULT_SYNC_DAYS): List<HeartRateRecord>? {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
-        val startDateTime = endDateTime.minusDays(days)
+        val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
         val fetchedData = try {
@@ -119,10 +122,10 @@ class HealthConnectManager(private val context: Context) {
         return fetchedData.records
     }
 
-    suspend fun getSleep(days: Long = 7): List<SleepSessionRecord>? {
+    suspend fun getSleep(days: Long = DEFAULT_SYNC_DAYS): List<SleepSessionRecord>? {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
-        val startDateTime = endDateTime.minusDays(days)
+        val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
         val fetchedData = try {
@@ -187,10 +190,10 @@ class HealthConnectManager(private val context: Context) {
         return fallbackData.records
     }
 
-    suspend fun getSteps(days: Long = 7): List<StepsRecord>? {
+    suspend fun getSteps(days: Long = DEFAULT_SYNC_DAYS): List<StepsRecord>? {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
-        val startDateTime = endDateTime.minusDays(days)
+        val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
         val fetchedData = try {
@@ -203,10 +206,10 @@ class HealthConnectManager(private val context: Context) {
         return fetchedData.records
     }
 
-    suspend fun getWeight(days: Long = 7): List<WeightRecord>? {
+    suspend fun getWeight(days: Long = DEFAULT_SYNC_DAYS): List<WeightRecord>? {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
-        val startDateTime = endDateTime.minusDays(days)
+        val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
         val fetchedData = try {
@@ -220,10 +223,10 @@ class HealthConnectManager(private val context: Context) {
         return fetchedData.records
     }
 
-    suspend fun getExerciseSessions(days: Long = 7): List<ExerciseSessionRecord>? {
+    suspend fun getExerciseSessions(days: Long = DEFAULT_SYNC_DAYS): List<ExerciseSessionRecord>? {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
-        val startDateTime = endDateTime.minusDays(days)
+        val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
         val fetchedData = try {
@@ -238,10 +241,10 @@ class HealthConnectManager(private val context: Context) {
         return fetchedData.records
     }
 
-    suspend fun getOxygenSaturation(days: Long = 7): List<OxygenSaturationRecord>? {
+    suspend fun getOxygenSaturation(days: Long = DEFAULT_SYNC_DAYS): List<OxygenSaturationRecord>? {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
-        val startDateTime = endDateTime.minusDays(days)
+        val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
         val fetchedData = try {
@@ -256,10 +259,10 @@ class HealthConnectManager(private val context: Context) {
         return fetchedData.records
     }
 
-    suspend fun getHydrationRecord(days: Long = 7): List<HydrationRecord>? {
+    suspend fun getHydrationRecord(days: Long = DEFAULT_SYNC_DAYS): List<HydrationRecord>? {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
-        val startDateTime = endDateTime.minusDays(days)
+        val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
         val fetchedData = try {
@@ -274,10 +277,10 @@ class HealthConnectManager(private val context: Context) {
         return fetchedData.records
     }
 
-    suspend fun getTotalCaloriesBurned(days: Long = 7): List<TotalCaloriesBurnedRecord>? {
+    suspend fun getTotalCaloriesBurned(days: Long = DEFAULT_SYNC_DAYS): List<TotalCaloriesBurnedRecord>? {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
-        val startDateTime = endDateTime.minusDays(days)
+        val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
         return try {
@@ -291,10 +294,10 @@ class HealthConnectManager(private val context: Context) {
         }
     }
 
-    suspend fun getAll(): Map<String, List<Record>?> {
+    suspend fun getAll(days: Long = DEFAULT_SYNC_DAYS): Map<String, List<Record>?> {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
-        val startDateTime = endDateTime.minusDays(7)
+        val startDateTime = endDateTime.minusDays(sanitizeDays(days))
 
         val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
 
@@ -348,4 +351,8 @@ class HealthConnectManager(private val context: Context) {
             }
         }
     }
+}
+
+private fun sanitizeDays(days: Long): Long {
+    return days.coerceIn(MIN_SYNC_DAYS, MAX_SYNC_DAYS)
 }

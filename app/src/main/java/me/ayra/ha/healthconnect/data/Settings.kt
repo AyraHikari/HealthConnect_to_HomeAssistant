@@ -8,6 +8,9 @@ import me.ayra.ha.healthconnect.utils.DataStore.toJson
 import me.ayra.ha.healthconnect.utils.DataStore.tryParseJson
 
 const val DATA = "DATA"
+const val MIN_SYNC_DAYS = 1L
+const val MAX_SYNC_DAYS = 30L
+const val DEFAULT_SYNC_DAYS = 7L
 
 object Settings {
     data class SyncError(
@@ -51,5 +54,15 @@ object Settings {
     }
     fun Context.setAutoSync(value: Boolean) {
         return setKey(DATA, "AutoSync", value)
+    }
+
+    fun Context.getSyncDays(): Long {
+        val storedValue = getSettings("syncDays")?.toLongOrNull()
+        return storedValue?.coerceIn(MIN_SYNC_DAYS, MAX_SYNC_DAYS) ?: DEFAULT_SYNC_DAYS
+    }
+
+    fun Context.setSyncDays(value: Long) {
+        val sanitizedValue = value.coerceIn(MIN_SYNC_DAYS, MAX_SYNC_DAYS)
+        setSettings("syncDays", sanitizedValue.toString())
     }
 }

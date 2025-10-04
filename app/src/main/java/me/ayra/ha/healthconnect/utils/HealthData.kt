@@ -3,6 +3,7 @@ package me.ayra.ha.healthconnect.utils
 import android.content.Context
 import androidx.health.connect.client.records.SleepSessionRecord
 import me.ayra.ha.healthconnect.data.Settings.getSettings
+import me.ayra.ha.healthconnect.data.Settings.getSyncDays
 import me.ayra.ha.healthconnect.utils.FitUtils.toExerciseName
 import me.ayra.ha.healthconnect.utils.SleepUtils.toSleepStageText
 import me.ayra.ha.healthconnect.utils.TimeUtils.dayTimestamp
@@ -15,45 +16,46 @@ class HealthData(
 ) {
     suspend fun getHealthData(hc: HealthConnectManager): MutableMap<String, Any?> {
         var healthData = mutableMapOf<String, Any?>()
+        val syncDays = context.getSyncDays()
         if (context.getSettings("sleep", true) == true) {
-            val sleep = getSleepData(hc)
+            val sleep = getSleepData(hc, syncDays)
             healthData["sleep"] = sleep
         }
         if (context.getSettings("heartRate", true) == true) {
-            val heartRate = getHeartRateData(hc)
+            val heartRate = getHeartRateData(hc, syncDays)
             healthData["heart"] = heartRate
         }
         if (context.getSettings("steps", true) == true) {
-            val steps = getStepsData(hc)
+            val steps = getStepsData(hc, syncDays)
             healthData["steps"] = steps
         }
         if (context.getSettings("weight", true) == true) {
-            val weight = getWeightData(hc)
+            val weight = getWeightData(hc, syncDays)
             healthData["weight"] = weight
         }
         if (context.getSettings("exercise", true) == true) {
-            val exercise = getExerciseData(hc)
+            val exercise = getExerciseData(hc, syncDays)
             healthData["exercise"] = exercise
         }
         if (context.getSettings("oxygen", true) == true) {
-            val oxygen = getOxygenSaturation(hc)
+            val oxygen = getOxygenSaturation(hc, syncDays)
             healthData["oxygen"] = oxygen
         }
         if (context.getSettings("hydration", true) == true) {
-            val hydration = getHydrationRecord(hc)
+            val hydration = getHydrationRecord(hc, syncDays)
             healthData["hydration"] = hydration
         }
         if (context.getSettings("calories", true) == true) {
-            val calories = getTotalCaloriesBurned(hc)
+            val calories = getTotalCaloriesBurned(hc, syncDays)
             healthData["calories"] = calories
         }
         return healthData
     }
 
-    private suspend fun getExerciseData(hc: HealthConnectManager): Map<String, Any?>? {
+    private suspend fun getExerciseData(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
-        val exerciseSessions = hc.getExerciseSessions()
+        val exerciseSessions = hc.getExerciseSessions(days)
             ?: run {
                 isUnavailable = true
                 if (!unavailableReason.contains("exercise")) unavailableReason.add("exercise")
@@ -113,11 +115,11 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getStepsData(hc: HealthConnectManager): Map<String, Any?>? {
+    private suspend fun getStepsData(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
         // Process steps data
-        hc.getSteps()?.forEach { record ->
+        hc.getSteps(days)?.forEach { record ->
             val date = dayTimestamp(record.startTime.epochSecond) ?: "unknown"
             if (!resultMap.containsKey(date)) {
                 resultMap[date] = mutableMapOf()
@@ -135,11 +137,11 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getWeightData(hc: HealthConnectManager): Map<String, Any?>? {
+    private suspend fun getWeightData(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<Long, Any>>()
 
         // Process weight data
-        hc.getWeight()?.forEach { record ->
+        hc.getWeight(days)?.forEach { record ->
             val date = dayTimestamp(record.time.epochSecond) ?: "unknown"
             val entry = resultMap.getOrPut(date) { mutableMapOf() }
             entry[record.time.epochSecond] = record.weight.inKilograms
@@ -152,8 +154,8 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getSleepData(hc: HealthConnectManager): Map<String, Any>? {
-        val data = hc.getSleep() ?: run {
+    private suspend fun getSleepData(hc: HealthConnectManager, days: Long): Map<String, Any>? {
+        val data = hc.getSleep(days) ?: run {
             isUnavailable = true
             if (!unavailableReason.contains("sleep")) unavailableReason.add("sleep")
             return null
@@ -290,10 +292,10 @@ class HealthData(
         stageData["sessions"] = sessions
     }
 
-    private suspend fun getHeartRateData(hc: HealthConnectManager): Map<String, Any?>? {
+    private suspend fun getHeartRateData(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
-        hc.getHeartRate()?.forEach { record ->
+        hc.getHeartRate(days)?.forEach { record ->
             record.samples.forEach { sample ->
                 val date = dayTimestamp(sample.time.epochSecond)
 
@@ -320,10 +322,10 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getOxygenSaturation(hc: HealthConnectManager): Map<String, Any?>? {
+    private suspend fun getOxygenSaturation(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
-        hc.getOxygenSaturation()?.forEach { record ->
+        hc.getOxygenSaturation(days)?.forEach { record ->
             val date = dayTimestamp(record.time.epochSecond) ?: "unknown"
 
             if (!resultMap.containsKey(date)) {
@@ -345,10 +347,10 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getHydrationRecord(hc: HealthConnectManager): Map<String, Any?>? {
+    private suspend fun getHydrationRecord(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
-        hc.getHydrationRecord()?.forEach { record ->
+        hc.getHydrationRecord(days)?.forEach { record ->
             val date = dayTimestamp(record.startTime.epochSecond) ?: "unknown"
 
             val dayData = resultMap.getOrPut(date) { mutableMapOf() }
@@ -368,10 +370,10 @@ class HealthData(
         return resultMap
     }
 
-    private suspend fun getTotalCaloriesBurned(hc: HealthConnectManager): Map<String, Any?>? {
+    private suspend fun getTotalCaloriesBurned(hc: HealthConnectManager, days: Long): Map<String, Any?>? {
         val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
 
-        hc.getTotalCaloriesBurned()?.forEach { record ->
+        hc.getTotalCaloriesBurned(days)?.forEach { record ->
             val date = dayTimestamp(record.startTime.epochSecond) ?: "unknown"
 
             val dayData = resultMap.getOrPut(date) { mutableMapOf() }

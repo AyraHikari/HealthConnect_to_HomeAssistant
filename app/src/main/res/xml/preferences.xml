@@ -5,6 +5,11 @@
             android:key="updateInterval"
             android:icon="@drawable/ic_sync_24px"
             android:title="Update Interval" />
+
+        <Preference
+            android:key="syncDays"
+            android:icon="@drawable/ic_today_24px"
+            android:title="@string/sync_days_title" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Home Assistant">

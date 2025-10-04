@@ -12,8 +12,13 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import me.ayra.ha.healthconnect.R
+import me.ayra.ha.healthconnect.data.DEFAULT_SYNC_DAYS
+import me.ayra.ha.healthconnect.data.MAX_SYNC_DAYS
+import me.ayra.ha.healthconnect.data.MIN_SYNC_DAYS
 import me.ayra.ha.healthconnect.data.Settings.getSettings
+import me.ayra.ha.healthconnect.data.Settings.getSyncDays
 import me.ayra.ha.healthconnect.data.Settings.setSettings
+import me.ayra.ha.healthconnect.data.Settings.setSyncDays
 import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
 import me.ayra.ha.healthconnect.utils.UiUtils.navigate
 
@@ -23,6 +28,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setPreferencesFromResource(R.xml.preferences, rootKey)
 
         setupIntervalPreference()
+        setupSyncDaysPreference()
         setupUrlPreference()
         setupTokenPreference()
         setupSensorEntityPreference()
@@ -51,6 +57,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
                 .setNegativeButton(R.string.cancel, null)
                 .show()
+            true
+        }
+    }
+
+    private fun setupSyncDaysPreference() {
+        val syncDaysPreference = findPreference<Preference>("syncDays") ?: return
+        updateSyncDaysSummary()
+
+        syncDaysPreference.setOnPreferenceClickListener {
+            val currentDays = context?.getSyncDays() ?: DEFAULT_SYNC_DAYS
+            showInputDialog("syncDays", getString(R.string.sync_days_title), currentDays.toString())
             true
         }
     }
@@ -87,6 +104,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
             activity?.navigate(R.id.settings_health_data_fragment)
             true
         }
+    }
+
+    private fun updateSyncDaysSummary() {
+        val days = context?.getSyncDays() ?: DEFAULT_SYNC_DAYS
+        findPreference<Preference>("syncDays")?.summary = getSyncDaysSummary(days)
+    }
+
+    private fun getSyncDaysSummary(days: Long): String {
+        val quantity = days.toInt().coerceAtLeast(1)
+        return resources.getQuantityString(R.plurals.sync_days_summary, quantity, days)
     }
 
     private fun setupAboutPreference() {
@@ -134,6 +161,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         }
                     })
                 }
+                "syncDays" -> {
+                    hint = getString(R.string.sync_days_hint)
+                    inputType = InputType.TYPE_CLASS_NUMBER
+                }
             }
         }
 
@@ -166,6 +197,22 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     key == "sensor" && !newValue.matches(Regex("^[a-zA-Z0-9_]+$")) -> {
                         inputLayout.error = getString(R.string.error_invalid_sensor_format)
                         return@setOnClickListener
+                    }
+                    key == "syncDays" -> {
+                        val days = newValue.toLongOrNull()
+                        if (days == null) {
+                            inputLayout.error = getString(R.string.error_invalid_sync_days, MIN_SYNC_DAYS, MAX_SYNC_DAYS)
+                            return@setOnClickListener
+                        }
+
+                        if (days !in MIN_SYNC_DAYS..MAX_SYNC_DAYS) {
+                            inputLayout.error = getString(R.string.error_invalid_sync_days, MIN_SYNC_DAYS, MAX_SYNC_DAYS)
+                            return@setOnClickListener
+                        }
+
+                        context.setSyncDays(days)
+                        updateSyncDaysSummary()
+                        dialog.dismiss()
                     }
                     else -> {
                         context.setSettings(key, newValue)
