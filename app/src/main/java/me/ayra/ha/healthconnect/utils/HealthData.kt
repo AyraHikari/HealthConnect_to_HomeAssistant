@@ -33,6 +33,10 @@ class HealthData(
             val weight = getWeightData(hc, syncDays)
             healthData["weight"] = weight
         }
+        if (context.getSettings("bodyTemperature", true) == true) {
+            val bodyTemperature = getBodyTemperatureData(hc, syncDays)
+            healthData["bodyTemperature"] = bodyTemperature
+        }
         if (context.getSettings("exercise", true) == true) {
             val exercise = getExerciseData(hc, syncDays)
             healthData["exercise"] = exercise
@@ -156,6 +160,35 @@ class HealthData(
         }
 
         if (resultMap.isEmpty()) {
+            return null
+        }
+
+        return resultMap
+    }
+
+    private suspend fun getBodyTemperatureData(
+        hc: HealthConnectManager,
+        days: Long
+    ): Map<String, Any?>? {
+        val resultMap = mutableMapOf<String, MutableMap<String, Any>>()
+
+        hc.getBodyTemperature(days)?.forEach { record ->
+            val date = dayTimestamp(record.time.epochSecond) ?: "unknown"
+            val dayData = resultMap.getOrPut(date) { mutableMapOf() }
+
+            dayData[record.time.epochSecond.toString()] = mapOf(
+                "time" to record.time.epochSecond,
+                "temperatureCelsius" to record.temperature.inCelsius,
+                "temperatureFahrenheit" to record.temperature.inFahrenheit,
+                "measurementLocation" to record.measurementLocation
+            )
+        }
+
+        if (resultMap.isEmpty()) {
+            isUnavailable = true
+            if (!unavailableReason.contains("body temperature")) {
+                unavailableReason.add("body temperature")
+            }
             return null
         }
 

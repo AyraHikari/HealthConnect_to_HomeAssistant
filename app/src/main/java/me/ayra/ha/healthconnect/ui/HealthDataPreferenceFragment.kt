@@ -21,6 +21,7 @@ class HealthDataPreferenceFragment : PreferenceFragmentCompat() {
             "heartRate",
             "steps",
             "weight",
+            "bodyTemperature",
             "exercise",
             "oxygen",
             "hydration",

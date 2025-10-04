@@ -26,6 +26,12 @@
         android:title="Weight" />
 
     <CheckBoxPreference
+        android:key="bodyTemperature"
+        android:icon="@drawable/ic_device_thermostat_24px"
+        android:summary="Body temperature (in °C/°F) categorized by day"
+        android:title="Body Temperature" />
+
+    <CheckBoxPreference
         android:key="exercise"
         android:icon="@drawable/ic_directions_bike_24px"
         android:summary="All exercise history categorized by day"

@@ -277,6 +277,24 @@ class HealthConnectManager(private val context: Context) {
         return fetchedData.records
     }
 
+    suspend fun getBodyTemperature(days: Long = DEFAULT_SYNC_DAYS): List<BodyTemperatureRecord>? {
+        val currentZoneId = ZoneId.systemDefault()
+        val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
+        val startDateTime = endDateTime.minusDays(sanitizeDays(days))
+
+        val timeRange = TimeRangeFilter.between(startDateTime.toInstant(), endDateTime.toInstant())
+        val fetchedData = try {
+            val request = ReadRecordsRequest(
+                recordType = BodyTemperatureRecord::class,
+                timeRangeFilter = timeRange
+            )
+            healthConnectClient.readRecords(request)
+        } catch (e: Exception) {
+            return null
+        }
+        return fetchedData.records
+    }
+
     suspend fun getTotalCaloriesBurned(days: Long = DEFAULT_SYNC_DAYS): List<TotalCaloriesBurnedRecord>? {
         val currentZoneId = ZoneId.systemDefault()
         val endDateTime = ZonedDateTime.ofInstant(Instant.now(), currentZoneId)
