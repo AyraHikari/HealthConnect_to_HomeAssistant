@@ -37,6 +37,7 @@ import me.ayra.ha.healthconnect.utils.DataStore.toJson
 import me.ayra.ha.healthconnect.utils.HealthConnectManager
 import me.ayra.ha.healthconnect.utils.HealthData
 import me.ayra.ha.healthconnect.utils.TimeUtils.unixTimeMs
+import me.ayra.ha.healthconnect.widget.SyncWidgetProvider
 import java.util.concurrent.TimeUnit
 import me.ayra.ha.healthconnect.data.Settings as DataSettings
 
@@ -209,6 +210,7 @@ class SyncWorker(
 
         if (isSuccess) {
             context.setLastSync(unixTimeMs)
+            SyncWidgetProvider.updateAllWidgets(context)
             context.removeLastError()
             return Result.success()
         } else {

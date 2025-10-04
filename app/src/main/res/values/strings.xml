@@ -20,6 +20,16 @@
     <string name="server_ok">Server OK</string>
     <string name="last_sync">Last sync: %s</string>
     <string name="never">Never</string>
+    <string name="widget_sync_button">Sync now</string>
+    <string name="widget_last_sync">Last: %s</string>
+    <string name="widget_last_sync_placeholder">Last: —:—</string>
+    <string name="widget_last_sync_one_day_ago">A day ago</string>
+    <plurals name="widget_last_sync_days_ago">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+    <string name="widget_last_sync_more_than_weeks_ago">More than weeks ago</string>
+    <string name="widget_syncing">Syncing…</string>
     <string name="auto_sync">Auto Sync (%s)</string>
     <string name="manual_sync">Manual sync</string>
     <string name="settings">Settings</string>

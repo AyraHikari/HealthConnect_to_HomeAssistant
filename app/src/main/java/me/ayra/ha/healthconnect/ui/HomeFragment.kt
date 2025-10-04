@@ -38,6 +38,7 @@ import me.ayra.ha.healthconnect.utils.UiUtils.showSuccess
 import me.ayra.ha.healthconnect.utils.UiUtils.startRotate
 import me.ayra.ha.healthconnect.utils.UiUtils.stopRotate
 import me.ayra.ha.healthconnect.utils.healthConnectPermissions
+import me.ayra.ha.healthconnect.widget.SyncWidgetProvider
 import kotlin.concurrent.thread
 
 class HomeFragment : Fragment() {
@@ -150,6 +151,7 @@ class HomeFragment : Fragment() {
                             stopRotate(sync)
                             if (isSuccess) {
                                 context?.setLastSync(unixTimeMs)
+                                context?.let { SyncWidgetProvider.updateAllWidgets(it) }
                                 errorMessage.visibility = View.GONE
                                 sync.setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.ic_arrow_downward_24px))
                                 lastSync.text =
