@@ -27,6 +27,11 @@
     <string name="hc_permission_denied">Health Connect permission denied</string>
     <string name="sync_success">Sync success</string>
     <string name="ha_error">Home Assistant return %s</string>
+    <string name="notification_permission_title">Allow notifications</string>
+    <string name="notification_permission_message">Enable notifications to stay informed about sync status and issues.</string>
+    <string name="allow">Allow</string>
+    <string name="deny">Deny</string>
+    <string name="never_show_again">Never show again</string>
 
     <string name="update_interval_title">Update interval</string>
     <string name="cancel">Cancel</string>
@@ -47,9 +52,9 @@
 
     <string name="foreground_service_title">Foreground service</string>
     <string name="foreground_service_summary">Show a notification while syncing to improve reliability. Tap the notification to turn it off.</string>
-    <string name="foreground_notification_channel_name">Health data sync</string>
+    <string name="foreground_notification_channel_name">Background Sync</string>
     <string name="foreground_notification_channel_description">Displays a persistent notification while syncing health data</string>
-    <string name="foreground_service_notification_channel">Background sync service</string>
+    <string name="foreground_service_notification_channel">Foreground Service</string>
     <string name="foreground_service_notification_title">Health Connect sync is active</string>
     <string name="foreground_service_notification_text">Tap to open notification settings or disable the foreground service.</string>
 

@@ -41,6 +41,12 @@ object Settings {
         setSettings("foregroundService", value)
     }
 
+    fun Context.isNotificationPromptDisabled(): Boolean = getSettings("notificationPermissionPromptDisabled", false) ?: false
+
+    fun Context.setNotificationPromptDisabled(value: Boolean) {
+        setSettings("notificationPermissionPromptDisabled", value)
+    }
+
     fun Context.getLastSync(): Long? = getKey<Long>(DATA, "lastSync")
 
     fun Context.setLastSync(value: Long) = setKey(DATA, "lastSync", value)
