@@ -1,9 +1,13 @@
 package me.ayra.ha.healthconnect.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.text.InputFilter
 import android.text.InputType
 import android.view.inputmethod.InputMethodManager
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.preference.Preference
@@ -26,6 +30,17 @@ import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
 import me.ayra.ha.healthconnect.utils.UiUtils.navigate
 
 class SettingsFragment : PreferenceFragmentCompat() {
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            val preference = findPreference<SwitchPreferenceCompat>("foregroundService") ?: return@registerForActivityResult
+
+            if (isGranted || !requiresNotificationPermission()) {
+                preference.isChecked = true
+            } else {
+                preference.isChecked = false
+            }
+        }
+
     override fun onCreatePreferences(
         savedInstanceState: Bundle?,
         rootKey: String?,
@@ -47,6 +62,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         preference.isChecked = context?.getForegroundServiceEnabled() ?: false
         preference.setOnPreferenceChangeListener { _, newValue ->
             val enabled = newValue as? Boolean ?: return@setOnPreferenceChangeListener false
+
+            if (enabled && !hasNotificationPermission()) {
+                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                return@setOnPreferenceChangeListener false
+            }
+
             context?.setForegroundServiceEnabled(enabled)
             true
         }
@@ -269,6 +290,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val imm = ContextCompat.getSystemService(context, InputMethodManager::class.java)
         imm?.showSoftInput(inputEditText, InputMethodManager.SHOW_IMPLICIT)
     }
+
+    private fun hasNotificationPermission(): Boolean {
+        val context = context ?: return false
+        if (!requiresNotificationPermission()) {
+            return true
+        }
+
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requiresNotificationPermission(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
     companion object {
         private const val DEFAULT_INTERVAL = "3600"
