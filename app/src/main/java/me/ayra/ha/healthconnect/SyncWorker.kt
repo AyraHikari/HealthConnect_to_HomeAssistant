@@ -270,10 +270,13 @@ class SyncWorker(
             .Builder(context, channelId)
             .setContentTitle(context.getString(R.string.syncing_notification_title))
             .setSmallIcon(R.drawable.ic_sync_24px)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
             .setOngoing(true)
-            .setOnlyAlertOnce(true)
             .setContentIntent(pendingIntent)
+            .setProgress(0, 0, true)
+            .setAutoCancel(false)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
             .build()
     }
 }

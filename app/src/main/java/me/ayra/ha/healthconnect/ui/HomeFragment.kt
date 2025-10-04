@@ -182,6 +182,7 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        SyncWorker.startNow(requireContext())
         if (isSettingsUpdate) {
             SyncWorker.schedule(requireContext())
             isSettingsUpdate = false
