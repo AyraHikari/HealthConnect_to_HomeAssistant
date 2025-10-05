@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.health.connect.client.PermissionController
 import androidx.navigation.fragment.NavHostFragment
@@ -24,6 +25,7 @@ import kotlin.concurrent.thread
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var hc: HealthConnectManager
+    private var bottomNavHeight = 0
 
     private val requestPermissionActivityContract = PermissionController.createRequestPermissionResultContract()
     private val requestPermissions =
@@ -58,6 +60,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         initializeGlideWithUnsafeOkHttp(this)
 
+        binding.bottomNav.doOnLayout {
+            bottomNavHeight = it.height
+        }
+
         val navHostFragment =
             supportFragmentManager
                 .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -86,15 +92,39 @@ class MainActivity : AppCompatActivity() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val showBottomNav =
                 destination.id == R.id.home_fragment || destination.id == R.id.settings_fragment
-            binding.bottomNav.isVisible = showBottomNav
+            binding.bottomNav.animate().cancel()
 
             if (showBottomNav) {
+                val navHeight = bottomNavHeight.takeIf { it != 0 } ?: binding.bottomNav.height
+                if (!binding.bottomNav.isVisible) {
+                    binding.bottomNav.translationY = navHeight.toFloat()
+                    binding.bottomNav.alpha = 0f
+                    binding.bottomNav.isVisible = true
+                }
+
+                binding.bottomNav
+                    .animate()
+                    .translationY(0f)
+                    .alpha(1f)
+                    .setDuration(300)
+                    .start()
+
                 binding.bottomNav.selectedItemId =
                     if (destination.id == R.id.home_fragment) {
                         R.id.navigation_home
                     } else {
                         R.id.navigation_settings
                     }
+            } else if (binding.bottomNav.isVisible) {
+                val navHeight = bottomNavHeight.takeIf { it != 0 } ?: binding.bottomNav.height
+                binding.bottomNav
+                    .animate()
+                    .translationY(navHeight.toFloat())
+                    .alpha(0f)
+                    .setDuration(300)
+                    .withEndAction {
+                        binding.bottomNav.isVisible = false
+                    }.start()
             }
         }
 
