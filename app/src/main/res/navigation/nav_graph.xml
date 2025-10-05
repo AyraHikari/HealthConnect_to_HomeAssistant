@@ -18,6 +18,12 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
+        android:id="@+id/stats_fragment"
+        android:name="me.ayra.ha.healthconnect.ui.StatsFragment"
+        android:label="@string/app_name"
+        tools:layout="@layout/fragment_stats" />
+
+    <fragment
         android:id="@+id/settings_fragment"
         android:name="me.ayra.ha.healthconnect.ui.SettingsFragment"
         android:label="@string/app_name"

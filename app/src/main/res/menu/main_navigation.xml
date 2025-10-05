@@ -7,6 +7,11 @@
         android:title="@string/navigation_home" />
 
     <item
+        android:id="@+id/navigation_stats"
+        android:icon="@drawable/ic_ecg_heart_24px"
+        android:title="@string/navigation_stats" />
+
+    <item
         android:id="@+id/navigation_settings"
         android:icon="@drawable/ic_settings_24px"
         android:title="@string/navigation_settings" />

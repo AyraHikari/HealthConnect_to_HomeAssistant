@@ -99,6 +99,17 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
+                R.id.navigation_stats -> {
+                    if (navController.currentDestination?.id != R.id.stats_fragment) {
+                        navController.navigate(
+                            R.id.stats_fragment,
+                            null,
+                            bottomNavigationAnimationOptions,
+                        )
+                    }
+                    true
+                }
+
                 R.id.navigation_settings -> {
                     if (navController.currentDestination?.id != R.id.settings_fragment) {
                         navController.navigate(
@@ -115,8 +126,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            val showBottomNav =
-                destination.id == R.id.home_fragment || destination.id == R.id.settings_fragment
+            val destinationsWithBottomNav =
+                setOf(R.id.home_fragment, R.id.settings_fragment, R.id.stats_fragment)
+            val showBottomNav = destination.id in destinationsWithBottomNav
             val comingFromSetup = lastDestinationId == R.id.login_fragment && destination.id == R.id.home_fragment
             binding.bottomNav.animate().cancel()
 
@@ -146,10 +158,11 @@ class MainActivity : AppCompatActivity() {
                     .start()
 
                 binding.bottomNav.selectedItemId =
-                    if (destination.id == R.id.home_fragment) {
-                        R.id.navigation_home
-                    } else {
-                        R.id.navigation_settings
+                    when (destination.id) {
+                        R.id.home_fragment -> R.id.navigation_home
+                        R.id.settings_fragment -> R.id.navigation_settings
+                        R.id.stats_fragment -> R.id.navigation_stats
+                        else -> binding.bottomNav.selectedItemId
                     }
             } else if (binding.bottomNav.isVisible) {
                 val navHeight = bottomNavHeight.takeIf { it != 0 } ?: binding.bottomNav.height

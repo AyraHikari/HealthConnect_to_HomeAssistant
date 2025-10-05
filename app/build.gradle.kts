@@ -92,6 +92,9 @@ dependencies {
     implementation("com.github.bumptech.glide:okhttp3-integration:4.16.0")
     implementation("jp.wasabeef:glide-transformations:4.3.0")
 
+    // Charts
+    implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
+
     // JSON
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")
