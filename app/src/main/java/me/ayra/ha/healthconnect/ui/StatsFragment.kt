@@ -21,7 +21,9 @@ import kotlinx.coroutines.withContext
 import me.ayra.ha.healthconnect.R
 import me.ayra.ha.healthconnect.data.DEFAULT_SYNC_DAYS
 import me.ayra.ha.healthconnect.data.HeartRateSample
+import me.ayra.ha.healthconnect.data.Settings.getSyncDays
 import me.ayra.ha.healthconnect.data.StatsData
+import me.ayra.ha.healthconnect.data.getStats
 import me.ayra.ha.healthconnect.data.saveStats
 import me.ayra.ha.healthconnect.databinding.FragmentStatsBinding
 import me.ayra.ha.healthconnect.utils.HealthConnectManager
@@ -58,10 +60,13 @@ class StatsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         healthConnectManager = HealthConnectManager(requireContext())
         setupHeartRateChart()
+        binding.swipeRefresh.setOnRefreshListener { fetchLatestStats() }
+        loadCachedStats()
     }
 
     override fun onResume() {
         super.onResume()
+        loadCachedStats()
         fetchLatestStats()
     }
 
@@ -75,27 +80,32 @@ class StatsFragment : Fragment() {
         fetchJob?.cancel()
         fetchJob =
             viewLifecycleOwner.lifecycleScope.launch {
-                binding.loadingIndicator.isVisible = true
                 binding.permissionMessage.isVisible = false
-                binding.emptyState.isVisible = false
-                binding.heartRateChart.isVisible = false
-                binding.heartRateHeader.isVisible = false
+                if (!binding.swipeRefresh.isRefreshing) {
+                    binding.swipeRefresh.isRefreshing = true
+                }
 
                 if (!healthConnectManager.hasAllPermissions()) {
-                    binding.loadingIndicator.isVisible = false
+                    binding.swipeRefresh.isRefreshing = false
                     binding.permissionMessage.isVisible = true
+                    binding.heartRateHeader.isVisible = false
+                    binding.heartRateChart.isVisible = false
+                    binding.emptyState.isVisible = false
                     return@launch
                 }
 
                 val records =
                     withContext(Dispatchers.IO) {
-                        runCatching { healthConnectManager.getAll(DEFAULT_SYNC_DAYS) }.getOrNull()
+                        runCatching { healthConnectManager.getAll(requireContext().getSyncDays()) }.getOrNull()
                     }
 
-                binding.loadingIndicator.isVisible = false
+                binding.swipeRefresh.isRefreshing = false
 
                 if (records == null) {
-                    showEmptyState(getString(R.string.stats_error_loading))
+                    val cachedStats = requireContext().getStats()
+                    if (cachedStats?.heartRate.isNullOrEmpty()) {
+                        showEmptyState(getString(R.string.stats_error_loading))
+                    }
                     return@launch
                 }
 
@@ -104,6 +114,26 @@ class StatsFragment : Fragment() {
                 requireContext().saveStats(StatsData(heartRate = samples))
                 updateHeartRateChart(samples)
             }
+    }
+
+    private fun loadCachedStats() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val hasPermissions = healthConnectManager.hasAllPermissions()
+            if (!hasPermissions) {
+                binding.permissionMessage.isVisible = true
+                binding.heartRateHeader.isVisible = false
+                binding.heartRateChart.isVisible = false
+                binding.emptyState.isVisible = false
+                return@launch
+            }
+
+            val cachedStats = requireContext().getStats()
+            if (cachedStats != null) {
+                updateHeartRateChart(cachedStats.heartRate)
+            } else {
+                showEmptyState(getString(R.string.stats_pull_to_refresh_hint))
+            }
+        }
     }
 
     private fun extractHeartRateSamples(records: List<*>): List<HeartRateSample> {

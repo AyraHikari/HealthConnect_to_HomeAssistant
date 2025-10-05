@@ -95,6 +95,8 @@ dependencies {
     // Charts
     implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
 
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
     // JSON
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")

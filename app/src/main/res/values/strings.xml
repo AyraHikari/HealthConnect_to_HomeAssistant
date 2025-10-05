@@ -40,6 +40,7 @@
     <string name="stats_no_heart_rate_data">No heart rate data available for the selected period.</string>
     <string name="stats_error_loading">We couldn\'t load your stats. Try again later.</string>
     <string name="stats_heart_rate_label">Heart rate</string>
+    <string name="stats_pull_to_refresh_hint">Pull down to load your latest stats.</string>
     <string name="error_time">Error (%s): %s</string>
     <string name="hc_permission_denied">Health Connect permission denied</string>
     <string name="sync_success">Sync success</string>
