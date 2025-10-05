@@ -48,7 +48,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:paddingTop="12dp"
-                    android:text="@string/stats_no_heart_rate_data"
+                    android:text="@string/stats_no_data"
                     android:visibility="gone"
                     tools:visibility="gone" />
             </LinearLayout>

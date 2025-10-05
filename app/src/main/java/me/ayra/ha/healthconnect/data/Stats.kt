@@ -14,8 +14,20 @@ data class HeartRateSample(
     val beatsPerMinute: Long,
 )
 
+data class SleepStageDuration(
+    val stageType: Int,
+    val durationSeconds: Long,
+)
+
+data class SleepStats(
+    val totalDurationSeconds: Long,
+    val sleepDurationSeconds: Long,
+    val stageDurations: List<SleepStageDuration> = emptyList(),
+)
+
 data class StatsData(
     val heartRate: List<HeartRateSample> = emptyList(),
+    val sleep: SleepStats? = null,
 )
 
 fun Context.saveStats(data: StatsData) {
