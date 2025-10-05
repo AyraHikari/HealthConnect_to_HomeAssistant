@@ -245,7 +245,9 @@ class HomeFragment : Fragment() {
     }
 
     override fun onDestroy() {
+        if (::backCallback.isInitialized) {
+            backCallback.remove()
+        }
         super.onDestroy()
-        backCallback.remove()
     }
 }
