@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.health.connect.client.PermissionController
 import androidx.navigation.fragment.NavHostFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -60,6 +61,42 @@ class MainActivity : AppCompatActivity() {
         val navHostFragment =
             supportFragmentManager
                 .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
+
+        binding.bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.navigation_home -> {
+                    if (navController.currentDestination?.id != R.id.home_fragment) {
+                        navController.navigate(R.id.home_fragment)
+                    }
+                    true
+                }
+
+                R.id.navigation_settings -> {
+                    if (navController.currentDestination?.id != R.id.settings_fragment) {
+                        navController.navigate(R.id.settings_fragment)
+                    }
+                    true
+                }
+
+                else -> false
+            }
+        }
+
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            val showBottomNav =
+                destination.id == R.id.home_fragment || destination.id == R.id.settings_fragment
+            binding.bottomNav.isVisible = showBottomNav
+
+            if (showBottomNav) {
+                binding.bottomNav.selectedItemId =
+                    if (destination.id == R.id.home_fragment) {
+                        R.id.navigation_home
+                    } else {
+                        R.id.navigation_settings
+                    }
+            }
+        }
 
         hc = HealthConnectManager(this)
 
