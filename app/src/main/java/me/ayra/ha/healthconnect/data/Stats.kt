@@ -25,9 +25,17 @@ data class SleepStats(
     val stageDurations: List<SleepStageDuration> = emptyList(),
 )
 
+data class StepsStats(
+    val totalSteps: Long = 0L,
+    val distanceKilometers: Double = 0.0,
+    val caloriesBurned: Double = 0.0,
+    val goal: Int = 5_000,
+)
+
 data class StatsData(
     val heartRate: List<HeartRateSample> = emptyList(),
     val sleep: SleepStats? = null,
+    val steps: StepsStats? = null,
 )
 
 fun Context.saveStats(data: StatsData) {

@@ -1,5 +1,6 @@
 package me.ayra.ha.healthconnect.ui
 
+import android.icu.text.NumberFormat
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,8 +9,10 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.health.connect.client.records.StepsRecord
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
@@ -27,6 +30,7 @@ import me.ayra.ha.healthconnect.data.Settings.getSyncDays
 import me.ayra.ha.healthconnect.data.SleepStageDuration
 import me.ayra.ha.healthconnect.data.SleepStats
 import me.ayra.ha.healthconnect.data.StatsData
+import me.ayra.ha.healthconnect.data.StepsStats
 import me.ayra.ha.healthconnect.data.getStats
 import me.ayra.ha.healthconnect.data.saveStats
 import me.ayra.ha.healthconnect.databinding.FragmentStatsBinding
@@ -50,6 +54,12 @@ class StatsFragment : Fragment() {
 
     private val timeFormatter by lazy {
         DateTimeFormatter.ofPattern("MMM d, HH:mm", Locale.getDefault())
+    }
+
+    private companion object {
+        private const val STEPS_GOAL = 5_000
+        private const val AVERAGE_STEP_LENGTH_METERS = 0.762
+        private const val CALORIES_PER_STEP = 0.04
     }
 
     override fun onCreateView(
@@ -89,11 +99,8 @@ class StatsFragment : Fragment() {
         statsAdapter = StatsAdapter()
         binding.statsList.apply {
             layoutManager =
-                GridLayoutManager(requireContext(), 2).apply {
-                    spanSizeLookup =
-                        object : GridLayoutManager.SpanSizeLookup() {
-                            override fun getSpanSize(position: Int): Int = statsAdapter.currentList.getOrNull(position)?.spanSize ?: 1
-                        }
+                GridLayoutManager(requireContext(), 1).apply {
+                    orientation = RecyclerView.VERTICAL
                 }
             adapter = statsAdapter
         }
@@ -135,9 +142,11 @@ class StatsFragment : Fragment() {
 
                 val heartRateRecords = records["HeartRate"] as? List<*> ?: emptyList<Any?>()
                 val sleepRecords = records["SleepSession"] as? List<*> ?: emptyList<Any?>()
+                val stepsRecords = records["Steps"] as? List<*> ?: emptyList<Any?>()
                 val samples = extractHeartRateSamples(heartRateRecords)
                 val sleepStats = extractSleepStats(sleepRecords)
-                val statsData = StatsData(heartRate = samples, sleep = sleepStats)
+                val stepsStats = extractStepsStats(stepsRecords)
+                val statsData = StatsData(heartRate = samples, sleep = sleepStats, steps = stepsStats)
                 requireContext().saveStats(statsData)
                 updateStats(statsData)
             }
@@ -192,6 +201,10 @@ class StatsFragment : Fragment() {
     private fun buildStatsItems(statsData: StatsData): List<StatsUiModel> {
         val items = mutableListOf<StatsUiModel>()
 
+        statsData.steps?.let { stepsStats ->
+            buildStepsItem(stepsStats)?.let(items::add)
+        }
+
         statsData.sleep?.let { sleepStats ->
             buildSleepItem(sleepStats)?.let(items::add)
         }
@@ -205,6 +218,7 @@ class StatsFragment : Fragment() {
                 when (item) {
                     is StatsUiModel.HeartRate -> item.copy(spanSize = 2)
                     is StatsUiModel.Sleep -> item.copy(spanSize = 2)
+                    is StatsUiModel.Steps -> item.copy(spanSize = 2)
                 }
             }
         }
@@ -220,6 +234,47 @@ class StatsFragment : Fragment() {
         }
 
         return items
+    }
+
+    private fun buildStepsItem(stepsStats: StepsStats): StatsUiModel.Steps? {
+        if (stepsStats.totalSteps <= 0L) return null
+
+        val goal = stepsStats.goal.takeIf { it > 0 } ?: STEPS_GOAL
+        val totalSteps = stepsStats.totalSteps
+
+        val stepCountText =
+            NumberFormat.getIntegerInstance().format(totalSteps.coerceAtLeast(0L))
+        val goalText =
+            getString(
+                R.string.stats_steps_goal_format,
+                NumberFormat.getIntegerInstance().format(goal),
+            )
+        val caloriesText =
+            getString(
+                R.string.stats_steps_calories_format,
+                NumberFormat.getIntegerInstance().format(stepsStats.caloriesBurned.roundToInt()),
+            )
+        val distanceFormat =
+            NumberFormat.getNumberInstance(Locale.getDefault()).apply {
+                maximumFractionDigits = 2
+                minimumFractionDigits = 2
+            }
+        val distanceText =
+            getString(
+                R.string.stats_steps_distance_format,
+                distanceFormat.format(stepsStats.distanceKilometers.coerceAtLeast(0.0)),
+            )
+
+        val progress = totalSteps.coerceAtMost(goal.toLong()).toInt()
+
+        return StatsUiModel.Steps(
+            stepCount = stepCountText,
+            goalText = goalText,
+            caloriesText = caloriesText,
+            distanceText = distanceText,
+            progress = progress,
+            goal = goal,
+        )
     }
 
     private fun buildHeartRateItem(samples: List<HeartRateSample>): StatsUiModel.HeartRate? {
@@ -239,6 +294,32 @@ class StatsFragment : Fragment() {
             lastHeartBeat = lastRecorded,
             iconRes = R.drawable.ic_ecg_heart_24px,
             statusIconRes = R.drawable.ic_check_circle_24px,
+        )
+    }
+
+    private fun extractStepsStats(records: List<*>): StepsStats? {
+        val stepsRecords = records.filterIsInstance<StepsRecord>()
+        if (stepsRecords.isEmpty()) return null
+
+        val zoneId = ZoneId.systemDefault()
+        val latestRecord = stepsRecords.maxByOrNull { it.endTime } ?: return null
+        val targetDate = latestRecord.endTime.atZone(zoneId).toLocalDate()
+
+        val totalSteps =
+            stepsRecords
+                .filter { it.endTime.atZone(zoneId).toLocalDate() == targetDate }
+                .sumOf { it.count }
+
+        if (totalSteps <= 0L) return null
+
+        val distance = totalSteps * AVERAGE_STEP_LENGTH_METERS / 1000.0
+        val calories = totalSteps * CALORIES_PER_STEP
+
+        return StepsStats(
+            totalSteps = totalSteps,
+            distanceKilometers = distance,
+            caloriesBurned = calories,
+            goal = STEPS_GOAL,
         )
     }
 
@@ -348,7 +429,7 @@ class StatsFragment : Fragment() {
             stageType == SleepSessionRecord.STAGE_TYPE_AWAKE_IN_BED ||
             stageType == SleepSessionRecord.STAGE_TYPE_OUT_OF_BED
 
-    private fun StatsData.hasData(): Boolean = heartRate.isNotEmpty() || sleep != null
+    private fun StatsData.hasData(): Boolean = heartRate.isNotEmpty() || sleep != null || steps != null
 
     private fun showStats(items: List<StatsUiModel>) {
         statsAdapter.submitList(items)

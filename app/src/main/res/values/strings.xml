@@ -55,6 +55,9 @@
     <string name="stats_sleep_stage_light">Light sleep</string>
     <string name="stats_sleep_stage_sleep">Sleep</string>
     <string name="stats_sleep_stage_other">Other</string>
+    <string name="stats_steps_goal_format">Goal %1$s</string>
+    <string name="stats_steps_calories_format">%1$s kcal</string>
+    <string name="stats_steps_distance_format">%1$s km</string>
     <string name="error_time">Error (%s): %s</string>
     <string name="hc_permission_denied">Health Connect permission denied</string>
     <string name="sync_success">Sync success</string>

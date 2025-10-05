@@ -14,6 +14,7 @@ import com.google.android.material.color.MaterialColors
 import me.ayra.ha.healthconnect.R
 import me.ayra.ha.healthconnect.databinding.ItemStatHeartRateBinding
 import me.ayra.ha.healthconnect.databinding.ItemStatSleepBinding
+import me.ayra.ha.healthconnect.databinding.ItemStatStepsBinding
 import com.google.android.material.R as MaterialR
 
 class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDiffCallback()) {
@@ -21,6 +22,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
         when (getItem(position)) {
             is StatsUiModel.HeartRate -> VIEW_TYPE_HEART_RATE
             is StatsUiModel.Sleep -> VIEW_TYPE_SLEEP
+            is StatsUiModel.Steps -> VIEW_TYPE_STEPS
         }
 
     override fun onCreateViewHolder(
@@ -44,6 +46,14 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
                         false,
                     ),
                 )
+            VIEW_TYPE_STEPS ->
+                StepsViewHolder(
+                    ItemStatStepsBinding.inflate(
+                        LayoutInflater.from(parent.context),
+                        parent,
+                        false,
+                    ),
+                )
 
             else -> error("Unknown view type: $viewType")
         }
@@ -55,6 +65,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
         when (val item = getItem(position)) {
             is StatsUiModel.HeartRate -> (holder as HeartRateViewHolder).bind(item)
             is StatsUiModel.Sleep -> (holder as SleepViewHolder).bind(item)
+            is StatsUiModel.Steps -> (holder as StepsViewHolder).bind(item)
         }
     }
 
@@ -194,9 +205,23 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             }
     }
 
+    class StepsViewHolder(
+        private val binding: ItemStatStepsBinding,
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(item: StatsUiModel.Steps) {
+            binding.stepCount.text = item.stepCount
+            binding.stepGoal.text = item.goalText
+            binding.stepCalories.text = item.caloriesText
+            binding.stepDistance.text = item.distanceText
+            binding.stepProgress.max = item.goal
+            binding.stepProgress.setProgressCompat(item.progress, true)
+        }
+    }
+
     companion object {
         private const val VIEW_TYPE_HEART_RATE = 0
         private const val VIEW_TYPE_SLEEP = 1
+        private const val VIEW_TYPE_STEPS = 2
     }
 }
 
@@ -238,6 +263,17 @@ sealed class StatsUiModel(
             OTHER,
         }
     }
+
+    data class Steps(
+        override val id: String = "steps",
+        val stepCount: String,
+        val goalText: String,
+        val caloriesText: String,
+        val distanceText: String,
+        val progress: Int,
+        val goal: Int,
+        override val spanSize: Int = 1,
+    ) : StatsUiModel(id, spanSize)
 }
 
 private class StatsDiffCallback : DiffUtil.ItemCallback<StatsUiModel>() {
