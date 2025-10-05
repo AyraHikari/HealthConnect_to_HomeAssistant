@@ -14,8 +14,15 @@ class HealthData(
     private var isUnavailable: Boolean = false,
     private val unavailableReason: MutableList<String> = mutableListOf<String>(),
 ) {
+    private data class SleepAccumulator(
+        var start: Long? = null,
+        var end: Long? = null,
+        var totalDuration: Long = 0L,
+        val stages: MutableMap<Int, MutableMap<String, Any>> = mutableMapOf(),
+    )
+
     suspend fun getHealthData(hc: HealthConnectManager): MutableMap<String, Any?> {
-        var healthData = mutableMapOf<String, Any?>()
+        val healthData = mutableMapOf<String, Any?>()
         val syncDays = context.getSyncDays()
         if (context.getSettings("sleep", true) == true) {
             val sleep = getSleepData(hc, syncDays)
@@ -223,99 +230,78 @@ class HealthData(
         val lastSleep = hc.getLastSleep()
 
         val sleepSessionData = mutableMapOf<String, Any>()
-        var totalSleepTime = 0L
-        var totalTimeInBed = 0L
-        var deepSleepTime = 0L
-        var remSleepTime = 0L
-        var awakeTime = 0L
-        var lightSleepTime = 0L
+        val sleepAccumulators = mutableMapOf<String, SleepAccumulator>()
 
         data.forEach { session ->
             val date = dayTimestamp(session.startTime.epochSecond) ?: "unknown"
-            val sleepStages = mutableMapOf<Int, MutableMap<String, Any>>()
-            val totalSessionDuration = session.endTime.epochSecond - session.startTime.epochSecond
-            totalTimeInBed += totalSessionDuration
+            val accumulator = sleepAccumulators.getOrPut(date) { SleepAccumulator() }
+
+            val sessionStart = session.startTime.epochSecond
+            val sessionEnd = session.endTime.epochSecond
+
+            accumulator.start =
+                accumulator.start?.let { minOf(it, sessionStart) } ?: sessionStart
+            accumulator.end = accumulator.end?.let { maxOf(it, sessionEnd) } ?: sessionEnd
+            accumulator.totalDuration += sessionEnd - sessionStart
 
             session.stages.forEach { stage ->
-                val duration = stage.endTime.epochSecond - stage.startTime.epochSecond
-                when (stage.stage) {
-                    SleepSessionRecord.STAGE_TYPE_DEEP -> {
-                        deepSleepTime += duration
-                        totalSleepTime += duration
-                    }
-                    SleepSessionRecord.STAGE_TYPE_REM -> {
-                        remSleepTime += duration
-                        totalSleepTime += duration
-                    }
-                    SleepSessionRecord.STAGE_TYPE_LIGHT -> {
-                        lightSleepTime += duration
-                        totalSleepTime += duration
-                    }
-                    SleepSessionRecord.STAGE_TYPE_AWAKE -> awakeTime += duration
-                }
-                updateSleepStages(sleepStages, stage, totalSessionDuration)
+                updateSleepStages(accumulator.stages, stage)
             }
-
-            sleepSessionData[date] =
-                mapOf(
-                    "start" to session.startTime.epochSecond,
-                    "end" to session.endTime.epochSecond,
-                    "stage" to sleepStages.values.toList(),
-                )
         }
 
-        totalSleepTime = 0L
-        totalTimeInBed = 0L
-        deepSleepTime = 0L
-        remSleepTime = 0L
-        awakeTime = 0L
-        lightSleepTime = 0L
-
-        lastSleep?.forEach { session ->
-            val date = dayTimestamp(session.startTime.epochSecond) ?: "unknown"
-            val sleepStages = mutableMapOf<Int, MutableMap<String, Any>>()
-            val totalSessionDuration = session.endTime.epochSecond - session.startTime.epochSecond
-            totalTimeInBed += totalSessionDuration
-
-            session.stages.forEach { stage ->
-                val duration = stage.endTime.epochSecond - stage.startTime.epochSecond
-                when (stage.stage) {
-                    SleepSessionRecord.STAGE_TYPE_DEEP -> {
-                        deepSleepTime += duration
-                        totalSleepTime += duration
-                    }
-                    SleepSessionRecord.STAGE_TYPE_REM -> {
-                        remSleepTime += duration
-                        totalSleepTime += duration
-                    }
-                    SleepSessionRecord.STAGE_TYPE_LIGHT -> {
-                        lightSleepTime += duration
-                        totalSleepTime += duration
-                    }
-                    SleepSessionRecord.STAGE_TYPE_AWAKE -> awakeTime += duration
-                }
-                updateSleepStages(sleepStages, stage, totalSessionDuration)
+        sleepAccumulators.forEach { (date, accumulator) ->
+            val start = accumulator.start
+            val end = accumulator.end
+            if (start != null && end != null) {
+                finalizeSleepStages(accumulator.stages, accumulator.totalDuration)
+                sleepSessionData[date] =
+                    mapOf(
+                        "start" to start,
+                        "end" to end,
+                        "stage" to accumulator.stages.values.toList(),
+                    )
             }
-
-            sleepSessionData["lastSleep"] =
-                mapOf(
-                    "start" to session.startTime.epochSecond,
-                    "end" to session.endTime.epochSecond,
-                    "stage" to sleepStages.values.toList(),
-                )
         }
 
-        return if (sleepSessionData.isEmpty()) {
+        lastSleep?.let { sessions ->
+            val accumulator = SleepAccumulator()
+
+            sessions.forEach { session ->
+                val sessionStart = session.startTime.epochSecond
+                val sessionEnd = session.endTime.epochSecond
+
+                accumulator.start =
+                    accumulator.start?.let { minOf(it, sessionStart) } ?: sessionStart
+                accumulator.end =
+                    accumulator.end?.let { maxOf(it, sessionEnd) } ?: sessionEnd
+                accumulator.totalDuration += sessionEnd - sessionStart
+
+                session.stages.forEach { stage ->
+                    updateSleepStages(accumulator.stages, stage)
+                }
+            }
+
+            val start = accumulator.start
+            val end = accumulator.end
+            if (start != null && end != null) {
+                finalizeSleepStages(accumulator.stages, accumulator.totalDuration)
+                sleepSessionData["lastSleep"] =
+                    mapOf(
+                        "start" to start,
+                        "end" to end,
+                        "stage" to accumulator.stages.values.toList(),
+                    )
+            }
+        }
+
+        return sleepSessionData.ifEmpty {
             null
-        } else {
-            sleepSessionData
         }
     }
 
     private fun updateSleepStages(
         sleepStages: MutableMap<Int, MutableMap<String, Any>>,
         stage: SleepSessionRecord.Stage,
-        totalSessionDuration: Long,
     ) {
         val duration = stage.endTime.epochSecond - stage.startTime.epochSecond
 
@@ -327,19 +313,12 @@ class HealthData(
                     "percentage" to 0.0,
                     "occurrences" to 0,
                     "sessions" to mutableListOf<Map<String, Long>>(),
+                    "totalTime" to 0L,
+                    "totalTimeFormat" to 0L.toTimeCount(),
                 )
             }
 
-        val currentTime = (stageData["time"] as? Long) ?: 0L
-        val newTime = currentTime + duration
-        val percentage =
-            if (totalSessionDuration > 0) {
-                (newTime.toDouble() / totalSessionDuration) * 100
-            } else {
-                0.0
-            }
-
-        val sessions = stageData["sessions"] as? MutableList<Map<String, Long>> ?: mutableListOf()
+        val sessions = stageData["sessions"] as MutableList<Map<String, Long>>
         sessions.add(
             mapOf(
                 "duration" to duration,
@@ -348,11 +327,27 @@ class HealthData(
             ),
         )
 
+        val newTime = (stageData["totalTime"] as Long) + duration
         stageData["totalTime"] = newTime
         stageData["totalTimeFormat"] = newTime.toTimeCount()
-        stageData["percentage"] = percentage
-        stageData["occurrences"] = (stageData["occurrences"] as? Int ?: 0) + 1
-        stageData["sessions"] = sessions
+        stageData["occurrences"] = (stageData["occurrences"] as Int) + 1
+    }
+
+    private fun finalizeSleepStages(
+        sleepStages: MutableMap<Int, MutableMap<String, Any>>,
+        totalDuration: Long,
+    ) {
+        sleepStages.values.forEach { stageData ->
+            val totalTime = stageData["totalTime"] as? Long ?: 0L
+            val percentage =
+                if (totalDuration > 0) {
+                    (totalTime.toDouble() / totalDuration) * 100
+                } else {
+                    0.0
+                }
+
+            stageData["percentage"] = percentage
+        }
     }
 
     private suspend fun getHeartRateData(
