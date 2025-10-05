@@ -13,6 +13,7 @@ import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.health.connect.client.PermissionController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.navOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import me.ayra.ha.healthconnect.ForegroundService.Companion.runServiceIfEnabled
 import me.ayra.ha.healthconnect.data.Settings.isNotificationPromptDisabled
@@ -31,6 +32,17 @@ class MainActivity : AppCompatActivity() {
     private var lastDestinationId: Int? = null
     private val showInterpolator by lazy { OvershootInterpolator() }
     private val defaultInterpolator by lazy { DecelerateInterpolator() }
+    private val bottomNavigationAnimationOptions by lazy {
+        navOptions {
+            anim {
+                enter = R.anim.nav_fade_in
+                exit = R.anim.nav_fade_out
+                popEnter = R.anim.nav_fade_in
+                popExit = R.anim.nav_fade_out
+            }
+            launchSingleTop = true
+        }
+    }
 
     private val requestPermissionActivityContract = PermissionController.createRequestPermissionResultContract()
     private val requestPermissions =
@@ -78,14 +90,22 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.navigation_home -> {
                     if (navController.currentDestination?.id != R.id.home_fragment) {
-                        navController.navigate(R.id.home_fragment)
+                        navController.navigate(
+                            R.id.home_fragment,
+                            null,
+                            bottomNavigationAnimationOptions,
+                        )
                     }
                     true
                 }
 
                 R.id.navigation_settings -> {
                     if (navController.currentDestination?.id != R.id.settings_fragment) {
-                        navController.navigate(R.id.settings_fragment)
+                        navController.navigate(
+                            R.id.settings_fragment,
+                            null,
+                            bottomNavigationAnimationOptions,
+                        )
                     }
                     true
                 }
