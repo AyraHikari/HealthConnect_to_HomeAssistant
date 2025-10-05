@@ -86,7 +86,6 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
         private val binding: ItemStatSleepBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: StatsUiModel.Sleep) {
-            binding.sleepQuality.text = item.sleepQualityText
             binding.sleepTime.text = item.sleepTimeText
 
             setupQualityChart(item)
@@ -242,7 +241,6 @@ sealed class StatsUiModel(
 
     data class Sleep(
         override val id: String = "sleep",
-        val sleepQualityText: String,
         val sleepTimeText: String,
         val sleepPercentage: Float,
         val awakePercentage: Float,

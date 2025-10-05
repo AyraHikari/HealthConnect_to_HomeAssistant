@@ -337,7 +337,6 @@ class StatsFragment : Fragment() {
             ((effectiveSleepDuration.toFloat() / totalDuration.toFloat()) * 100f)
                 .coerceIn(0f, 100f)
         val awakePercentage = (100f - sleepPercentage).coerceAtLeast(0f)
-        val qualityText = getString(R.string.stats_sleep_quality, sleepPercentage.roundToInt())
         val sleepTimeText =
             getString(R.string.stats_sleep_duration, effectiveSleepDuration.toTimeCount())
 
@@ -360,7 +359,6 @@ class StatsFragment : Fragment() {
             }
 
         return StatsUiModel.Sleep(
-            sleepQualityText = qualityText,
             sleepTimeText = sleepTimeText,
             sleepPercentage = sleepPercentage,
             awakePercentage = awakePercentage,

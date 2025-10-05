@@ -45,14 +45,13 @@
                         app:tint="?attr/colorOnPrimaryContainer" />
 
                     <TextView
-                        android:id="@+id/sleepQuality"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:textColor="?attr/colorOnPrimaryContainer"
-                        android:textSize="18sp"
+                        android:textSize="14sp"
                         android:textStyle="bold"
-                        tools:text="Quality 72%" />
+                        tools:text="Sleep" />
 
                     <TextView
                         android:id="@+id/sleepTime"
@@ -60,9 +59,9 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:textColor="?attr/colorOnPrimaryContainer"
-                        android:textSize="14sp"
+                        android:textSize="18sp"
                         android:textStyle="bold"
-                        tools:text="Sleep 8h 27m" />
+                        tools:text="8h 27m" />
                 </LinearLayout>
 
                 <Space
