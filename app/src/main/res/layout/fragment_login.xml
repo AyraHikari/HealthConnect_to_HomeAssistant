@@ -31,6 +31,7 @@
                     android:id="@+id/logo"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
+                    android:background="?attr/colorPrimary"
                     app:cardCornerRadius="10dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -40,7 +41,7 @@
                         android:id="@+id/app_logo"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
+                        android:background="?attr/colorPrimary"
                         android:src="@mipmap/ic_launcher" />
                 </androidx.cardview.widget.CardView>
 
@@ -167,6 +168,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="70dp" />
             </FrameLayout>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/loginProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:trackCornerRadius="10dp"
+                android:indeterminate="true" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/login"

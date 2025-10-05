@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -26,6 +28,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var hc: HealthConnectManager
     private var bottomNavHeight = 0
+    private var lastDestinationId: Int? = null
+    private val showInterpolator by lazy { OvershootInterpolator() }
+    private val defaultInterpolator by lazy { DecelerateInterpolator() }
 
     private val requestPermissionActivityContract = PermissionController.createRequestPermissionResultContract()
     private val requestPermissions =
@@ -92,6 +97,7 @@ class MainActivity : AppCompatActivity() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val showBottomNav =
                 destination.id == R.id.home_fragment || destination.id == R.id.settings_fragment
+            val comingFromSetup = lastDestinationId == R.id.login_fragment && destination.id == R.id.home_fragment
             binding.bottomNav.animate().cancel()
 
             if (showBottomNav) {
@@ -99,6 +105,13 @@ class MainActivity : AppCompatActivity() {
                 if (!binding.bottomNav.isVisible) {
                     binding.bottomNav.translationY = navHeight.toFloat()
                     binding.bottomNav.alpha = 0f
+                    if (comingFromSetup) {
+                        binding.bottomNav.scaleX = 0.9f
+                        binding.bottomNav.scaleY = 0.9f
+                    } else {
+                        binding.bottomNav.scaleX = 1f
+                        binding.bottomNav.scaleY = 1f
+                    }
                     binding.bottomNav.isVisible = true
                 }
 
@@ -106,7 +119,10 @@ class MainActivity : AppCompatActivity() {
                     .animate()
                     .translationY(0f)
                     .alpha(1f)
-                    .setDuration(300)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(if (comingFromSetup) 450 else 300)
+                    .setInterpolator(if (comingFromSetup) showInterpolator else defaultInterpolator)
                     .start()
 
                 binding.bottomNav.selectedItemId =
@@ -121,11 +137,14 @@ class MainActivity : AppCompatActivity() {
                     .animate()
                     .translationY(navHeight.toFloat())
                     .alpha(0f)
+                    .setInterpolator(defaultInterpolator)
                     .setDuration(300)
                     .withEndAction {
                         binding.bottomNav.isVisible = false
                     }.start()
             }
+
+            lastDestinationId = destination.id
         }
 
         hc = HealthConnectManager(this)

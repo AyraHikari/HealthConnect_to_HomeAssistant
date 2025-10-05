@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -13,26 +14,29 @@ import me.ayra.ha.healthconnect.data.Settings.setSettings
 import me.ayra.ha.healthconnect.databinding.FragmentLoginBinding
 import me.ayra.ha.healthconnect.network.HomeAssistant.checkHomeAssistant
 import me.ayra.ha.healthconnect.utils.Coroutines.ioSafe
+import me.ayra.ha.healthconnect.utils.Coroutines.runOnMainThread
 import me.ayra.ha.healthconnect.utils.UiUtils.navigate
 import me.ayra.ha.healthconnect.utils.UiUtils.showError
 import me.ayra.ha.healthconnect.utils.UiUtils.showSuccess
 import kotlin.concurrent.thread
 
 class LoginFragment : Fragment() {
-
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentLoginBinding.inflate(inflater, container, false)
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         val labels = resources.getStringArray(R.array.sync_intervals)
@@ -47,8 +51,7 @@ class LoginFragment : Fragment() {
                         val selectedValue = values[which]
                         updateInterval.setText(selectedLabel)
                         updateInterval.tag = selectedValue
-                    }
-                    .setNegativeButton("Cancel", null)
+                    }.setNegativeButton("Cancel", null)
                     .show()
             }
 
@@ -70,6 +73,7 @@ class LoginFragment : Fragment() {
                 token.isEmpty() -> showError("Please enter your access token")
                 sensorName.isEmpty() -> showError("Please enter a sensor name")
                 else -> {
+                    setLoading(true)
                     thread {
                         ioSafe {
                             performLogin(url, token, sensorName, updateInterval)
@@ -84,7 +88,8 @@ class LoginFragment : Fragment() {
         super.onResume()
         if (context?.getSettings("url") != null &&
             context?.getSettings("token") != null &&
-            context?.getSettings("sensor") != null) {
+            context?.getSettings("sensor") != null
+        ) {
             activity?.navigate(R.id.home_fragment, inclusive = true)
         }
     }
@@ -93,20 +98,31 @@ class LoginFragment : Fragment() {
         url: String,
         token: String,
         sensorName: String,
-        updateInterval: TextInputEditText
+        updateInterval: TextInputEditText,
     ) {
         val (isAuthOk, message) = checkHomeAssistant(url, token)
-        if (isAuthOk) {
-            binding.showSuccess("Login successful!")
-            context?.setSettings("url", url)
-            context?.setSettings("token", token)
-            context?.setSettings("sensor", sensorName)
-            val updateIntervalSec = updateInterval.tag as? String ?: "900"
-            context?.setSettings("updateInterval", updateIntervalSec)
-            activity?.navigate(R.id.home_fragment)
-        } else {
-            binding.showError("Login failed: $message")
+        runOnMainThread {
+            val binding = _binding ?: return@runOnMainThread
+            setLoading(false)
+
+            if (isAuthOk) {
+                binding.showSuccess("Login successful!")
+                context?.setSettings("url", url)
+                context?.setSettings("token", token)
+                context?.setSettings("sensor", sensorName)
+                val updateIntervalSec = updateInterval.tag as? String ?: "900"
+                context?.setSettings("updateInterval", updateIntervalSec)
+                activity?.navigate(R.id.home_fragment)
+            } else {
+                binding.showError("Login failed: $message")
+            }
         }
+    }
+
+    private fun setLoading(isLoading: Boolean) {
+        val binding = _binding ?: return
+        binding.login.isEnabled = !isLoading
+        binding.loginProgress.isVisible = isLoading
     }
 
     override fun onDestroyView() {
