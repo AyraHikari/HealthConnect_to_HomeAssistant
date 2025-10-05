@@ -8,6 +8,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
@@ -38,6 +39,7 @@ class StatsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var healthConnectManager: HealthConnectManager
+    private lateinit var statsAdapter: StatsAdapter
     private var fetchJob: Job? = null
 
     private val timeFormatter by lazy {
@@ -59,7 +61,7 @@ class StatsFragment : Fragment() {
     ) {
         super.onViewCreated(view, savedInstanceState)
         healthConnectManager = HealthConnectManager(requireContext())
-        setupHeartRateChart()
+        setupStatsList()
         binding.swipeRefresh.setOnRefreshListener { fetchLatestStats() }
         loadCachedStats()
     }
@@ -73,7 +75,22 @@ class StatsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         fetchJob?.cancel()
+        binding.statsList.adapter = null
         _binding = null
+    }
+
+    private fun setupStatsList() {
+        statsAdapter = StatsAdapter()
+        binding.statsList.apply {
+            layoutManager =
+                GridLayoutManager(requireContext(), 2).apply {
+                    spanSizeLookup =
+                        object : GridLayoutManager.SpanSizeLookup() {
+                            override fun getSpanSize(position: Int): Int = statsAdapter.currentList.getOrNull(position)?.spanSize ?: 1
+                        }
+                }
+            adapter = statsAdapter
+        }
     }
 
     private fun fetchLatestStats() {
@@ -87,16 +104,17 @@ class StatsFragment : Fragment() {
 
                 if (!healthConnectManager.hasAllPermissions()) {
                     binding.swipeRefresh.isRefreshing = false
+                    statsAdapter.submitList(emptyList())
                     binding.permissionMessage.isVisible = true
-                    binding.heartRateHeader.isVisible = false
-                    binding.heartRateChart.isVisible = false
+                    binding.statsList.isVisible = false
                     binding.emptyState.isVisible = false
                     return@launch
                 }
 
                 val records =
                     withContext(Dispatchers.IO) {
-                        runCatching { healthConnectManager.getAll(requireContext().getSyncDays()) }.getOrNull()
+                        runCatching { healthConnectManager.getAll(requireContext().getSyncDays()) }
+                            .getOrNull()
                     }
 
                 binding.swipeRefresh.isRefreshing = false
@@ -112,7 +130,7 @@ class StatsFragment : Fragment() {
                 val heartRateRecords = records["HeartRate"] as? List<*> ?: emptyList<Any?>()
                 val samples = extractHeartRateSamples(heartRateRecords)
                 requireContext().saveStats(StatsData(heartRate = samples))
-                updateHeartRateChart(samples)
+                updateStats(samples)
             }
     }
 
@@ -120,16 +138,16 @@ class StatsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             val hasPermissions = healthConnectManager.hasAllPermissions()
             if (!hasPermissions) {
+                statsAdapter.submitList(emptyList())
                 binding.permissionMessage.isVisible = true
-                binding.heartRateHeader.isVisible = false
-                binding.heartRateChart.isVisible = false
+                binding.statsList.isVisible = false
                 binding.emptyState.isVisible = false
                 return@launch
             }
 
             val cachedStats = requireContext().getStats()
             if (cachedStats != null) {
-                updateHeartRateChart(cachedStats.heartRate)
+                updateStats(cachedStats.heartRate)
             } else {
                 showEmptyState(getString(R.string.stats_pull_to_refresh_hint))
             }
@@ -151,96 +169,61 @@ class StatsFragment : Fragment() {
             }.sortedBy { it.timestamp }
     }
 
-    private fun setupHeartRateChart() {
-        val chart = binding.heartRateChart
-        val onBackgroundColor =
-            MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnBackground)
-        val primaryColor =
-            MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorPrimary)
+    private fun updateStats(samples: List<HeartRateSample>) {
+        binding.permissionMessage.isVisible = false
 
-        chart.description.isEnabled = false
-        chart.legend.isEnabled = false
-        chart.setNoDataText(getString(R.string.stats_no_heart_rate_data))
-        chart.setNoDataTextColor(onBackgroundColor)
-        chart.axisRight.isEnabled = false
-        chart.axisLeft.textColor = onBackgroundColor
-        chart.axisLeft.setDrawGridLines(false)
-        chart.xAxis.apply {
-            position = XAxis.XAxisPosition.BOTTOM
-            textColor = onBackgroundColor
-            setDrawGridLines(false)
-            granularity = 1f
+        val statsItems = buildHeartRateItems(samples)
+        if (statsItems.isEmpty()) {
+            showEmptyState(getString(R.string.stats_no_heart_rate_data))
+        } else {
+            showStats(statsItems)
         }
-        chart.setTouchEnabled(true)
-        chart.setScaleEnabled(true)
-        chart.setPinchZoom(true)
-        chart.extraBottomOffset = 12f
-        chart.axisLeft.granularity = 1f
-        chart.axisLeft.axisLineColor = primaryColor
-        chart.xAxis.axisLineColor = primaryColor
     }
 
-    private fun updateHeartRateChart(samples: List<HeartRateSample>) {
-        binding.permissionMessage.isVisible = false
-        binding.heartRateHeader.isVisible = true
+    private fun buildHeartRateItems(samples: List<HeartRateSample>): List<StatsUiModel> {
+        if (samples.isEmpty()) return emptyList()
 
-        if (samples.isEmpty()) {
-            binding.heartRateChart.clear()
-            binding.heartRateChart.isVisible = false
-            showEmptyState(getString(R.string.stats_no_heart_rate_data))
-            return
-        }
+        val min = samples.minOf { it.beatsPerMinute }.toInt()
+        val max = samples.maxOf { it.beatsPerMinute }.toInt()
+        val latest = samples.last()
+        val average = samples.map { it.beatsPerMinute }.average().roundToInt()
+        val lastRecorded =
+            timeFormatter.format(Instant.ofEpochSecond(latest.timestamp).atZone(ZoneId.systemDefault()))
 
+        val heartRateItem =
+            StatsUiModel.HeartRate(
+                minMaxHeartBeat = getString(R.string.stats_range_format, min, max),
+                heartStatus = getString(R.string.stats_heart_rate_average, average),
+                heartBeat = latest.beatsPerMinute.toString(),
+                lastHeartBeat = lastRecorded,
+                iconRes = R.drawable.ic_ecg_heart_24px,
+                statusIconRes = R.drawable.ic_check_circle_24px,
+            )
+
+        return listOf(heartRateItem)
+    }
+
+    private fun showStats(items: List<StatsUiModel>) {
+        val adjustedItems =
+            if (items.size == 1) {
+                items.map {
+                    when (it) {
+                        is StatsUiModel.HeartRate -> it.copy(spanSize = 2)
+                    }
+                }
+            } else {
+                items
+            }
+
+        statsAdapter.submitList(adjustedItems)
+        binding.statsList.isVisible = true
         binding.emptyState.isVisible = false
-        binding.heartRateChart.isVisible = true
-
-        val entries =
-            samples.mapIndexed { index, sample ->
-                Entry(index.toFloat(), sample.beatsPerMinute.toFloat())
-            }
-
-        val chart = binding.heartRateChart
-        val primaryColor =
-            MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorPrimary)
-        val onBackgroundColor =
-            MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnBackground)
-
-        val dataSet =
-            LineDataSet(entries, getString(R.string.stats_heart_rate_label)).apply {
-                setDrawCircles(false)
-                setDrawValues(false)
-                mode = LineDataSet.Mode.CUBIC_BEZIER
-                color = primaryColor
-                lineWidth = 2f
-                highLightColor = primaryColor
-            }
-
-        chart.data = LineData(dataSet)
-        chart.axisLeft.textColor = onBackgroundColor
-        chart.xAxis.textColor = onBackgroundColor
-        chart.xAxis.valueFormatter = HeartRateAxisValueFormatter(samples, timeFormatter)
-        chart.xAxis.labelRotationAngle = -30f
-        chart.invalidate()
     }
 
     private fun showEmptyState(message: String) {
-        binding.permissionMessage.isVisible = false
-        binding.heartRateHeader.isVisible = true
-        binding.heartRateChart.clear()
-        binding.heartRateChart.isVisible = false
+        statsAdapter.submitList(emptyList())
+        binding.statsList.isVisible = false
         binding.emptyState.text = message
         binding.emptyState.isVisible = true
-    }
-
-    private class HeartRateAxisValueFormatter(
-        private val samples: List<HeartRateSample>,
-        private val formatter: DateTimeFormatter,
-    ) : ValueFormatter() {
-        override fun getFormattedValue(value: Float): String {
-            if (samples.isEmpty()) return ""
-            val index = value.roundToInt().coerceIn(0, samples.lastIndex)
-            val instant = Instant.ofEpochSecond(samples[index].timestamp)
-            return formatter.format(instant.atZone(ZoneId.systemDefault()))
-        }
     }
 }

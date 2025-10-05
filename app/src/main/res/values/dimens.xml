@@ -1,3 +1,6 @@
 <resources>
     <dimen name="dialog_padding">16dp</dimen>
+    <dimen name="stats_card_corner_radius">16dp</dimen>
+    <dimen name="stats_card_padding">16dp</dimen>
+    <dimen name="stats_card_spacing">8dp</dimen>
 </resources>

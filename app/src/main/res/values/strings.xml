@@ -41,6 +41,10 @@
     <string name="stats_error_loading">We couldn\'t load your stats. Try again later.</string>
     <string name="stats_heart_rate_label">Heart rate</string>
     <string name="stats_pull_to_refresh_hint">Pull down to load your latest stats.</string>
+    <string name="stats_heart_rate_average">%1$d bpm avg</string>
+    <string name="stats_range_format">%1$d-%2$d</string>
+    <string name="stats_heart_rate_unit">bpm</string>
+    <string name="stats_last_recorded_label">Last</string>
     <string name="error_time">Error (%s): %s</string>
     <string name="hc_permission_denied">Health Connect permission denied</string>
     <string name="sync_success">Sync success</string>
