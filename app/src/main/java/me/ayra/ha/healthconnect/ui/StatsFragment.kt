@@ -479,7 +479,9 @@ class StatsFragment : Fragment() {
     private fun StatsData.hasData(): Boolean = heartRate.isNotEmpty() || sleep != null || steps != null
 
     private fun showStats(items: List<StatsUiModel>) {
-        statsAdapter.submitList(items)
+        statsAdapter.submitList(items) {
+            statsAdapter.refreshAllCards()
+        }
         binding.statsList.isVisible = true
         binding.emptyState.isVisible = false
     }

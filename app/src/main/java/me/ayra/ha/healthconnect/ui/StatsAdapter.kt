@@ -26,6 +26,14 @@ import com.google.android.material.R as MaterialR
 class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDiffCallback()) {
     private var selectedItemId: String? = null
 
+    fun refreshAllCards() {
+        if (currentList.isEmpty()) return
+
+        currentList.indices.forEach { index ->
+            notifyItemChanged(index)
+        }
+    }
+
     override fun getItemViewType(position: Int): Int =
         when (getItem(position)) {
             is StatsUiModel.HeartRate -> VIEW_TYPE_HEART_RATE
