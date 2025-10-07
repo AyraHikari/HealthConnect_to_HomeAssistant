@@ -5,9 +5,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.DrawableRes
+import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
@@ -120,6 +125,12 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             binding.lastHeartBeat.text = item.lastHeartBeat
             binding.statIcon.setImageResource(item.iconRes)
             binding.statusIcon.setImageResource(item.statusIconRes)
+            renderBackgroundChart(
+                binding.statCardBackgroundChart,
+                item.chartValues,
+                MaterialColors.getColor(binding.root, MaterialR.attr.colorPrimary),
+                null,
+            )
             updateSelection(isSelected)
         }
 
@@ -128,6 +139,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             updateCardSelection(
                 binding.statCardOverlay,
                 binding.statCardBackgroundChart,
+                binding.statCardForeground,
                 isSelected,
                 binding.root,
             )
@@ -153,6 +165,13 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             currentItemId = item.id
             binding.sleepTime.text = item.sleepTimeText
 
+            renderBackgroundChart(
+                binding.statCardBackgroundChart,
+                item.backgroundChartValues,
+                MaterialColors.getColor(binding.root, MaterialR.attr.colorTertiary),
+                100f,
+            )
+
             setupQualityChart(item)
             setupStageChart(item)
             updateSelection(isSelected)
@@ -163,6 +182,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             updateCardSelection(
                 binding.statCardOverlay,
                 binding.statCardBackgroundChart,
+                binding.statCardForeground,
                 isSelected,
                 binding.root,
             )
@@ -323,6 +343,12 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             binding.stepDistance.text = item.distanceText
             binding.stepProgress.max = item.goal
             binding.stepProgress.setProgressCompat(item.progress, true)
+            renderBackgroundChart(
+                binding.statCardBackgroundChart,
+                item.chartValues,
+                MaterialColors.getColor(binding.root, MaterialR.attr.colorSecondary),
+                item.goal.toFloat(),
+            )
             updateSelection(isSelected)
         }
 
@@ -331,6 +357,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             updateCardSelection(
                 binding.statCardOverlay,
                 binding.statCardBackgroundChart,
+                binding.statCardForeground,
                 isSelected,
                 binding.root,
             )
@@ -348,9 +375,75 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
         private const val SELECTED_CHART_ALPHA = 1f
         private const val UNSELECTED_CHART_ALPHA = 0.1f
 
+        private fun renderBackgroundChart(
+            chart: LineChart,
+            values: List<Float>,
+            color: Int,
+            maxValue: Float?,
+        ) {
+            if (values.isEmpty()) {
+                chart.clear()
+                chart.invalidate()
+                return
+            }
+
+            val entries =
+                values.mapIndexed { index, value -> Entry(index.toFloat(), value) }
+
+            val dataSet =
+                LineDataSet(entries, null).apply {
+                    this.color = color
+                    lineWidth = 2f
+                    mode = LineDataSet.Mode.CUBIC_BEZIER
+                    setDrawCircles(false)
+                    setDrawValues(false)
+                    setDrawFilled(true)
+                    fillColor = ColorUtils.setAlphaComponent(color, 120)
+                    fillAlpha = 120
+                    highLightColor = Color.TRANSPARENT
+                }
+
+            val lineData = LineData(dataSet).apply { setDrawValues(false) }
+
+            chart.apply {
+                data = lineData
+                description.isEnabled = false
+                legend.isEnabled = false
+                setTouchEnabled(false)
+                setScaleEnabled(false)
+                isDragEnabled = false
+                setPinchZoom(false)
+                setNoDataText("")
+                axisLeft.apply {
+                    isEnabled = false
+                    axisMinimum = 0f
+                    setDrawGridLines(false)
+                    setDrawAxisLine(false)
+                    val maxEntryValue = entries.maxOfOrNull { it.y } ?: 0f
+                    val targetMax = maxValue?.let { maxOf(it, maxEntryValue) } ?: maxEntryValue
+                    val computedMax =
+                        if (targetMax > 0f) {
+                            if (maxValue == null) targetMax * 1.05f else targetMax
+                        } else {
+                            1f
+                        }
+                    axisMaximum = computedMax
+                }
+                axisRight.isEnabled = false
+                xAxis.apply {
+                    isEnabled = false
+                    setDrawGridLines(false)
+                    setDrawAxisLine(false)
+                }
+                setViewPortOffsets(0f, 0f, 0f, 0f)
+                invalidate()
+            }
+        }
+
         private fun updateCardSelection(
             overlayView: View,
             backgroundView: View,
+            foregroundView: View,
             isSelected: Boolean,
             itemView: View,
         ) {
@@ -362,6 +455,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
 
             overlayView.animate().cancel()
             backgroundView.animate().cancel()
+            foregroundView.animate().cancel()
 
             if (animate) {
                 overlayView
@@ -374,9 +468,15 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
                     .alpha(backgroundTarget)
                     .setDuration(SELECTION_ANIMATION_DURATION)
                     .start()
+                foregroundView
+                    .animate()
+                    .alpha(overlayTarget)
+                    .setDuration(SELECTION_ANIMATION_DURATION)
+                    .start()
             } else {
                 overlayView.alpha = overlayTarget
                 backgroundView.alpha = backgroundTarget
+                foregroundView.alpha = overlayTarget
             }
         }
     }
@@ -414,6 +514,7 @@ sealed class StatsUiModel(
         val lastHeartBeat: String,
         @DrawableRes val iconRes: Int,
         @DrawableRes val statusIconRes: Int,
+        val chartValues: List<Float> = emptyList(),
         override val spanSize: Int = 1,
     ) : StatsUiModel(id, spanSize)
 
@@ -423,6 +524,7 @@ sealed class StatsUiModel(
         val sleepPercentage: Float,
         val awakePercentage: Float,
         val stagePercentages: List<SleepStagePercentage>,
+        val backgroundChartValues: List<Float> = emptyList(),
         override val spanSize: Int = 2,
     ) : StatsUiModel(id, spanSize) {
         data class SleepStagePercentage(
@@ -448,6 +550,7 @@ sealed class StatsUiModel(
         val distanceText: String,
         val progress: Int,
         val goal: Int,
+        val chartValues: List<Float>,
         override val spanSize: Int = 1,
     ) : StatsUiModel(id, spanSize)
 }

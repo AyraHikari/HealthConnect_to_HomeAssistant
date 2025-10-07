@@ -16,17 +16,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <ImageView
-            android:id="@+id/statCardBackgroundChart"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:adjustViewBounds="true"
-            android:alpha="0.1"
-            android:contentDescription="@null"
-            android:scaleType="fitXY"
-            android:src="@drawable/bg_stats_chart_wave"
-            app:tint="?attr/colorSecondary" />
-
         <View
             android:id="@+id/statCardOverlay"
             android:layout_width="match_parent"
@@ -34,105 +23,114 @@
             android:alpha="1"
             android:background="?attr/colorPrimaryContainer" />
 
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/statCardBackgroundChart"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.8"
+            android:contentDescription="@null"
+            android:visibility="visible" />
+
         <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/statCardForeground"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="@dimen/stats_card_padding">
 
-        <LinearLayout
-            android:id="@+id/stepsHeader"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <ImageView
-                android:id="@+id/stepIcon"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_podiatry_24px"
-                app:tint="?attr/colorOnPrimaryContainer" />
-
             <LinearLayout
+                android:id="@+id/stepsHeader"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:gravity="end"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
-                <TextView
-                    android:id="@+id/stepGoal"
-                    android:layout_width="wrap_content"
+                <ImageView
+                    android:id="@+id/stepIcon"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_podiatry_24px"
+                    app:tint="?attr/colorOnPrimaryContainer" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:textColor="?attr/colorOnPrimaryContainer"
-                    android:textStyle="bold"
-                    android:textSize="18sp"
-                    tools:text="Goal 5,000" />
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/stepGoal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"
+                        android:textSize="18sp"
+                        tools:text="Goal 5,000" />
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/stepsValueGroup"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/stepsHeader">
-
-            <TextView
-                android:id="@+id/stepCount"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="?attr/colorOnPrimaryContainer"
-                android:textSize="26sp"
-                android:textStyle="bold"
-                tools:text="3,852" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:id="@+id/stepsValueGroup"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:gravity="end"
-                android:orientation="vertical">
-                <TextView
-                    android:id="@+id/stepDistance"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="?attr/colorOnPrimaryContainer"
-                    android:textStyle="bold"
-                    tools:text="2.45 km" />
-                <TextView
-                    android:id="@+id/stepCalories"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="?attr/colorOnPrimaryContainer"
-                    android:textStyle="bold"
-                    tools:text="240 kcal" />
-            </LinearLayout>
-        </LinearLayout>
+                android:layout_marginTop="18dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/stepsHeader">
 
-        <com.google.android.material.progressindicator.LinearProgressIndicator
-            android:id="@+id/stepProgress"
-            style="@style/Widget.MaterialComponents.LinearProgressIndicator"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="4dp"
-            android:indeterminate="false"
-            android:max="5000"
-            app:trackCornerRadius="10dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/stepsValueGroup"
-            app:trackThickness="8dp"
-            tools:progress="2800" />
+                <TextView
+                    android:id="@+id/stepCount"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:textSize="26sp"
+                    android:textStyle="bold"
+                    tools:text="3,852" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/stepDistance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"
+                        tools:text="2.45 km" />
+                    <TextView
+                        android:id="@+id/stepCalories"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/colorOnPrimaryContainer"
+                        android:textStyle="bold"
+                        tools:text="240 kcal" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/stepProgress"
+                style="@style/Widget.MaterialComponents.LinearProgressIndicator"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="4dp"
+                android:indeterminate="false"
+                android:max="5000"
+                app:trackCornerRadius="10dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/stepsValueGroup"
+                app:trackThickness="8dp"
+                tools:progress="2800" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </FrameLayout>

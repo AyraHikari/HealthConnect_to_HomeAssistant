@@ -30,6 +30,12 @@ data class StepsStats(
     val distanceKilometers: Double = 0.0,
     val caloriesBurned: Double = 0.0,
     val goal: Int = 5_000,
+    val timeline: List<StepsTimelineEntry> = emptyList(),
+)
+
+data class StepsTimelineEntry(
+    val endTimeEpochSecond: Long,
+    val cumulativeSteps: Long,
 )
 
 data class StatsData(

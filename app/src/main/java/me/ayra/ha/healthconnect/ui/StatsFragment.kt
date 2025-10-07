@@ -31,6 +31,7 @@ import me.ayra.ha.healthconnect.data.SleepStageDuration
 import me.ayra.ha.healthconnect.data.SleepStats
 import me.ayra.ha.healthconnect.data.StatsData
 import me.ayra.ha.healthconnect.data.StepsStats
+import me.ayra.ha.healthconnect.data.StepsTimelineEntry
 import me.ayra.ha.healthconnect.data.getStats
 import me.ayra.ha.healthconnect.data.saveStats
 import me.ayra.ha.healthconnect.databinding.FragmentStatsBinding
@@ -60,6 +61,8 @@ class StatsFragment : Fragment() {
         private const val STEPS_GOAL = 5_000
         private const val AVERAGE_STEP_LENGTH_METERS = 0.762
         private const val CALORIES_PER_STEP = 0.04
+        private const val MAX_HEART_RATE_CHART_POINTS = 40
+        private const val MAX_STEP_CHART_POINTS = 48
     }
 
     override fun onCreateView(
@@ -267,6 +270,21 @@ class StatsFragment : Fragment() {
 
         val progress = totalSteps.coerceAtMost(goal.toLong()).toInt()
 
+        val timelineValues =
+            stepsStats.timeline
+                .takeLast(MAX_STEP_CHART_POINTS)
+                .map { it.cumulativeSteps.toFloat() }
+
+        val chartValues =
+            if (timelineValues.isNotEmpty()) {
+                buildList {
+                    add(0f)
+                    addAll(timelineValues)
+                }
+            } else {
+                listOf(0f, totalSteps.toFloat())
+            }
+
         return StatsUiModel.Steps(
             stepCount = stepCountText,
             goalText = goalText,
@@ -274,18 +292,33 @@ class StatsFragment : Fragment() {
             distanceText = distanceText,
             progress = progress,
             goal = goal,
+            chartValues = chartValues,
         )
     }
 
     private fun buildHeartRateItem(samples: List<HeartRateSample>): StatsUiModel.HeartRate? {
         if (samples.isEmpty()) return null
 
-        val min = samples.minOf { it.beatsPerMinute }.toInt()
-        val max = samples.maxOf { it.beatsPerMinute }.toInt()
-        val latest = samples.last()
-        val average = samples.map { it.beatsPerMinute }.average().roundToInt()
+        val sortedSamples = samples.sortedBy { it.timestamp }
+
+        val min = sortedSamples.minOf { it.beatsPerMinute }.toInt()
+        val max = sortedSamples.maxOf { it.beatsPerMinute }.toInt()
+        val latest = sortedSamples.last()
+        val average = sortedSamples.map { it.beatsPerMinute }.average().roundToInt()
         val lastRecorded =
             timeFormatter.format(Instant.ofEpochSecond(latest.timestamp).atZone(ZoneId.systemDefault()))
+
+        val chartValues =
+            sortedSamples
+                .takeLast(MAX_HEART_RATE_CHART_POINTS)
+                .map { it.beatsPerMinute.toFloat() }
+                .let { values ->
+                    when {
+                        values.size >= 2 -> values
+                        values.size == 1 -> listOf(values.first(), values.first())
+                        else -> emptyList()
+                    }
+                }
 
         return StatsUiModel.HeartRate(
             minMaxHeartBeat = getString(R.string.stats_range_format, min, max),
@@ -294,6 +327,7 @@ class StatsFragment : Fragment() {
             lastHeartBeat = lastRecorded,
             iconRes = R.drawable.ic_ecg_heart_24px,
             statusIconRes = R.drawable.ic_check_circle_24px,
+            chartValues = chartValues,
         )
     }
 
@@ -305,21 +339,34 @@ class StatsFragment : Fragment() {
         val latestRecord = stepsRecords.maxByOrNull { it.endTime } ?: return null
         val targetDate = latestRecord.endTime.atZone(zoneId).toLocalDate()
 
-        val totalSteps =
+        val dayRecords =
             stepsRecords
                 .filter { it.endTime.atZone(zoneId).toLocalDate() == targetDate }
-                .sumOf { it.count }
+                .sortedBy { it.endTime }
+
+        val totalSteps = dayRecords.sumOf { it.count }
 
         if (totalSteps <= 0L) return null
 
         val distance = totalSteps * AVERAGE_STEP_LENGTH_METERS / 1000.0
         val calories = totalSteps * CALORIES_PER_STEP
 
+        var cumulativeSteps = 0L
+        val timeline =
+            dayRecords.map { record ->
+                cumulativeSteps += record.count
+                StepsTimelineEntry(
+                    endTimeEpochSecond = record.endTime.epochSecond,
+                    cumulativeSteps = cumulativeSteps,
+                )
+            }
+
         return StepsStats(
             totalSteps = totalSteps,
             distanceKilometers = distance,
             caloriesBurned = calories,
             goal = STEPS_GOAL,
+            timeline = timeline,
         )
     }
 
@@ -357,11 +404,14 @@ class StatsFragment : Fragment() {
                 emptyList()
             }
 
+        val backgroundChartValues = listOf(0f, sleepPercentage, sleepPercentage, 0f)
+
         return StatsUiModel.Sleep(
             sleepTimeText = sleepTimeText,
             sleepPercentage = sleepPercentage,
             awakePercentage = awakePercentage,
             stagePercentages = stagePercentages,
+            backgroundChartValues = backgroundChartValues,
         )
     }
 
