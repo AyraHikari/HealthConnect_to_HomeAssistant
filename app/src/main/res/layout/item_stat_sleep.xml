@@ -51,7 +51,7 @@
                         android:textColor="?attr/colorOnPrimaryContainer"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        tools:text="Sleep" />
+                        android:text="@string/stats_sleep" />
 
                     <TextView
                         android:id="@+id/sleepTime"

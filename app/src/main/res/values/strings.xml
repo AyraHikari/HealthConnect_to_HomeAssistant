@@ -46,8 +46,7 @@
     <string name="stats_range_format">%1$d-%2$d</string>
     <string name="stats_heart_rate_unit">bpm</string>
     <string name="stats_last_recorded_label">Last</string>
-    <string name="stats_sleep_quality">Quality %1$d%%</string>
-    <string name="stats_sleep_duration">Sleep %1$s</string>
+    <string name="stats_sleep">Sleep</string>
     <string name="stats_sleep_chart_sleep_label">Sleep</string>
     <string name="stats_sleep_chart_awake_label">Awake</string>
     <string name="stats_sleep_stage_deep">Deep sleep</string>

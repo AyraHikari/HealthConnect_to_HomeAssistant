@@ -337,8 +337,7 @@ class StatsFragment : Fragment() {
             ((effectiveSleepDuration.toFloat() / totalDuration.toFloat()) * 100f)
                 .coerceIn(0f, 100f)
         val awakePercentage = (100f - sleepPercentage).coerceAtLeast(0f)
-        val sleepTimeText =
-            getString(R.string.stats_sleep_duration, effectiveSleepDuration.toTimeCount())
+        val sleepTimeText = effectiveSleepDuration.toTimeCount()
 
         val restfulStages = sleepStats.stageDurations.filterNot { isAwakeStage(it.stageType) }
         val restfulTotal = restfulStages.sumOf { it.durationSeconds }
