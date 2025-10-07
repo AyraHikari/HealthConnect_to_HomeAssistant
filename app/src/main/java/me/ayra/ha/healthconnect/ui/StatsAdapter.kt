@@ -149,21 +149,41 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
         }
 
         private fun setupStageChart(item: StatsUiModel.Sleep) {
-            val entries =
-                item.stagePercentages
-                    .filter { it.percentage > 0f }
-                    .map { PieEntry(it.percentage, it.label) }
+            val sleepShareFactor = (item.sleepPercentage / 100f).coerceIn(0f, 1f)
 
-            if (entries.isEmpty()) {
+            val stageEntriesWithColors =
+                item.stagePercentages
+                    .mapNotNull { stage ->
+                        val scaledValue = stage.percentage * sleepShareFactor
+                        if (scaledValue <= 0f) {
+                            null
+                        } else {
+                            PieEntry(scaledValue, stage.label) to getStageColor(stage.type)
+                        }
+                    }
+
+            val awakeEntry =
+                item.awakePercentage.takeIf { it > 0f }?.let {
+                    PieEntry(
+                        it,
+                        binding.root.context.getString(R.string.stats_sleep_chart_awake_label),
+                    ) to MaterialColors.getColor(binding.root, MaterialR.attr.colorPrimaryContainer)
+                }
+
+            val entriesWithColors =
+                buildList {
+                    addAll(stageEntriesWithColors)
+                    awakeEntry?.let { add(it) }
+                }
+
+            if (entriesWithColors.isEmpty()) {
                 binding.sleepTimeChart.clear()
                 binding.sleepTimeChart.invalidate()
                 return
             }
 
-            val colors =
-                item.stagePercentages
-                    .filter { it.percentage > 0f }
-                    .map { getStageColor(it.type) }
+            val entries = entriesWithColors.map { it.first }
+            val colors = entriesWithColors.map { it.second }
 
             val dataSet =
                 PieDataSet(entries, null).apply {
