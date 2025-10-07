@@ -197,21 +197,24 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
         }
 
         private fun setupQualityChart(item: StatsUiModel.Sleep) {
+            val sleepQuality = item.sleepQualityPercentage.coerceIn(0f, 100f)
+            val remainingToGoal = (100f - sleepQuality).coerceAtLeast(0f)
+
             val entries =
                 buildList {
-                    if (item.sleepPercentage > 0f) {
+                    if (sleepQuality > 0f) {
                         add(
                             PieEntry(
-                                item.sleepPercentage,
+                                sleepQuality,
                                 binding.root.context.getString(R.string.stats_sleep_chart_sleep_label),
                             ),
                         )
                     }
-                    if (item.awakePercentage > 0f) {
+                    if (remainingToGoal > 0f) {
                         add(
                             PieEntry(
-                                item.awakePercentage,
-                                binding.root.context.getString(R.string.stats_sleep_chart_awake_label),
+                                remainingToGoal,
+                                binding.root.context.getString(R.string.stats_sleep_chart_goal_label),
                             ),
                         )
                     }
@@ -529,6 +532,7 @@ sealed class StatsUiModel(
     data class Sleep(
         override val id: String = "sleep",
         val sleepTimeText: String,
+        val sleepQualityPercentage: Float,
         val sleepPercentage: Float,
         val awakePercentage: Float,
         val stagePercentages: List<SleepStagePercentage>,

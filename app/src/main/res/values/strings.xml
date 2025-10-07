@@ -49,6 +49,7 @@
     <string name="stats_sleep">Sleep</string>
     <string name="stats_sleep_chart_sleep_label">Sleep</string>
     <string name="stats_sleep_chart_awake_label">Awake</string>
+    <string name="stats_sleep_chart_goal_label">Remaining</string>
     <string name="stats_sleep_stage_deep">Deep sleep</string>
     <string name="stats_sleep_stage_rem">REM</string>
     <string name="stats_sleep_stage_light">Light sleep</string>

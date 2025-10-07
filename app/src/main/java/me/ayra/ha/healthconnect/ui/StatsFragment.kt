@@ -63,6 +63,7 @@ class StatsFragment : Fragment() {
         private const val CALORIES_PER_STEP = 0.04
         private const val MAX_HEART_RATE_CHART_POINTS = 40
         private const val MAX_STEP_CHART_POINTS = 48
+        private val SLEEP_GOAL_SECONDS = Duration.ofHours(8).seconds
     }
 
     override fun onCreateView(
@@ -385,6 +386,14 @@ class StatsFragment : Fragment() {
                 .coerceIn(0f, 100f)
         val awakePercentage = (100f - sleepPercentage).coerceAtLeast(0f)
         val sleepTimeText = totalDuration.toTimeCount()
+        val sleepQualityPercentage =
+            if (SLEEP_GOAL_SECONDS > 0L) {
+                (
+                    (effectiveSleepDuration.toFloat() / SLEEP_GOAL_SECONDS.toFloat()) * 100f
+                ).coerceIn(0f, 100f)
+            } else {
+                0f
+            }
 
         val restfulStages = sleepStats.stageDurations.filterNot { isAwakeStage(it.stageType) }
         val restfulTotal = restfulStages.sumOf { it.durationSeconds }
@@ -408,6 +417,7 @@ class StatsFragment : Fragment() {
 
         return StatsUiModel.Sleep(
             sleepTimeText = sleepTimeText,
+            sleepQualityPercentage = sleepQualityPercentage,
             sleepPercentage = sleepPercentage,
             awakePercentage = awakePercentage,
             stagePercentages = stagePercentages,
