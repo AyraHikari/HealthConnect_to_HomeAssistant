@@ -8,14 +8,36 @@
     android:layout_marginEnd="@dimen/stats_card_spacing"
     android:layout_marginTop="@dimen/stats_card_spacing"
     android:layout_marginBottom="@dimen/stats_card_spacing"
-    app:cardBackgroundColor="?attr/colorPrimaryContainer"
+    app:cardBackgroundColor="@android:color/transparent"
     app:cardCornerRadius="@dimen/stats_card_corner_radius"
     app:strokeColor="@android:color/transparent">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="@dimen/stats_card_padding">
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/statCardBackgroundChart"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="true"
+            android:alpha="0.1"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/bg_stats_chart_wave"
+            app:tint="?attr/colorSecondary" />
+
+        <View
+            android:id="@+id/statCardOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="1"
+            android:background="?attr/colorPrimaryContainer" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/stats_card_padding">
 
         <LinearLayout
             android:id="@+id/stepsHeader"
@@ -112,5 +134,6 @@
             app:trackThickness="8dp"
             tools:progress="2800" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
 </com.google.android.material.card.MaterialCardView>

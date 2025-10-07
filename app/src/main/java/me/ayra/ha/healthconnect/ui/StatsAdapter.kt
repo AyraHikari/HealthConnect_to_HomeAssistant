@@ -2,6 +2,7 @@ package me.ayra.ha.healthconnect.ui
 
 import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.DrawableRes
 import androidx.recyclerview.widget.DiffUtil
@@ -18,6 +19,8 @@ import me.ayra.ha.healthconnect.databinding.ItemStatStepsBinding
 import com.google.android.material.R as MaterialR
 
 class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDiffCallback()) {
+    private var selectedItemId: String? = null
+
     override fun getItemViewType(position: Int): Int =
         when (getItem(position)) {
             is StatsUiModel.HeartRate -> VIEW_TYPE_HEART_RATE
@@ -37,6 +40,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
                         parent,
                         false,
                     ),
+                    ::onItemSelected,
                 )
             VIEW_TYPE_SLEEP ->
                 SleepViewHolder(
@@ -45,6 +49,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
                         parent,
                         false,
                     ),
+                    ::onItemSelected,
                 )
             VIEW_TYPE_STEPS ->
                 StepsViewHolder(
@@ -53,6 +58,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
                         parent,
                         false,
                     ),
+                    ::onItemSelected,
                 )
 
             else -> error("Unknown view type: $viewType")
@@ -61,35 +67,105 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
     override fun onBindViewHolder(
         holder: RecyclerView.ViewHolder,
         position: Int,
+        payloads: MutableList<Any>,
+    ) {
+        if (payloads.contains(PAYLOAD_SELECTION)) {
+            val item = getItem(position)
+            val isSelected = item.id == selectedItemId
+            when (holder) {
+                is HeartRateViewHolder -> holder.updateSelection(isSelected)
+                is SleepViewHolder -> holder.updateSelection(isSelected)
+                is StepsViewHolder -> holder.updateSelection(isSelected)
+            }
+            return
+        }
+
+        super.onBindViewHolder(holder, position, payloads)
+    }
+
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
     ) {
         when (val item = getItem(position)) {
-            is StatsUiModel.HeartRate -> (holder as HeartRateViewHolder).bind(item)
-            is StatsUiModel.Sleep -> (holder as SleepViewHolder).bind(item)
-            is StatsUiModel.Steps -> (holder as StepsViewHolder).bind(item)
+            is StatsUiModel.HeartRate ->
+                (holder as HeartRateViewHolder).bind(item, item.id == selectedItemId)
+            is StatsUiModel.Sleep ->
+                (holder as SleepViewHolder).bind(item, item.id == selectedItemId)
+            is StatsUiModel.Steps ->
+                (holder as StepsViewHolder).bind(item, item.id == selectedItemId)
         }
     }
 
     class HeartRateViewHolder(
         private val binding: ItemStatHeartRateBinding,
+        private val onItemSelected: (String) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: StatsUiModel.HeartRate) {
+        private var currentItemId: String? = null
+
+        init {
+            binding.root.isClickable = true
+            binding.root.isFocusable = true
+            binding.root.setOnClickListener { currentItemId?.let(onItemSelected) }
+        }
+
+        fun bind(
+            item: StatsUiModel.HeartRate,
+            isSelected: Boolean,
+        ) {
+            currentItemId = item.id
             binding.minMaxHeartBeat.text = item.minMaxHeartBeat
             binding.heartStatus.text = item.heartStatus
             binding.heartBeat.text = item.heartBeat
             binding.lastHeartBeat.text = item.lastHeartBeat
             binding.statIcon.setImageResource(item.iconRes)
             binding.statusIcon.setImageResource(item.statusIconRes)
+            updateSelection(isSelected)
+        }
+
+        fun updateSelection(isSelected: Boolean) {
+            binding.root.isSelected = isSelected
+            updateCardSelection(
+                binding.statCardOverlay,
+                binding.statCardBackgroundChart,
+                isSelected,
+                binding.root,
+            )
         }
     }
 
     class SleepViewHolder(
         private val binding: ItemStatSleepBinding,
+        private val onItemSelected: (String) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: StatsUiModel.Sleep) {
+        private var currentItemId: String? = null
+
+        init {
+            binding.root.isClickable = true
+            binding.root.isFocusable = true
+            binding.root.setOnClickListener { currentItemId?.let(onItemSelected) }
+        }
+
+        fun bind(
+            item: StatsUiModel.Sleep,
+            isSelected: Boolean,
+        ) {
+            currentItemId = item.id
             binding.sleepTime.text = item.sleepTimeText
 
             setupQualityChart(item)
             setupStageChart(item)
+            updateSelection(isSelected)
+        }
+
+        fun updateSelection(isSelected: Boolean) {
+            binding.root.isSelected = isSelected
+            updateCardSelection(
+                binding.statCardOverlay,
+                binding.statCardBackgroundChart,
+                isSelected,
+                binding.root,
+            )
         }
 
         private fun setupQualityChart(item: StatsUiModel.Sleep) {
@@ -149,21 +225,41 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
         }
 
         private fun setupStageChart(item: StatsUiModel.Sleep) {
-            val entries =
-                item.stagePercentages
-                    .filter { it.percentage > 0f }
-                    .map { PieEntry(it.percentage, it.label) }
+            val sleepShareFactor = (item.sleepPercentage / 100f).coerceIn(0f, 1f)
 
-            if (entries.isEmpty()) {
+            val stageEntriesWithColors =
+                item.stagePercentages
+                    .mapNotNull { stage ->
+                        val scaledValue = stage.percentage * sleepShareFactor
+                        if (scaledValue <= 0f) {
+                            null
+                        } else {
+                            PieEntry(scaledValue, stage.label) to getStageColor(stage.type)
+                        }
+                    }
+
+            val awakeEntry =
+                item.awakePercentage.takeIf { it > 0f }?.let {
+                    PieEntry(
+                        it,
+                        binding.root.context.getString(R.string.stats_sleep_chart_awake_label),
+                    ) to MaterialColors.getColor(binding.root, MaterialR.attr.colorPrimaryContainer)
+                }
+
+            val entriesWithColors =
+                buildList {
+                    addAll(stageEntriesWithColors)
+                    awakeEntry?.let { add(it) }
+                }
+
+            if (entriesWithColors.isEmpty()) {
                 binding.sleepTimeChart.clear()
                 binding.sleepTimeChart.invalidate()
                 return
             }
 
-            val colors =
-                item.stagePercentages
-                    .filter { it.percentage > 0f }
-                    .map { getStageColor(it.type) }
+            val entries = entriesWithColors.map { it.first }
+            val colors = entriesWithColors.map { it.second }
 
             val dataSet =
                 PieDataSet(entries, null).apply {
@@ -206,14 +302,38 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
 
     class StepsViewHolder(
         private val binding: ItemStatStepsBinding,
+        private val onItemSelected: (String) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: StatsUiModel.Steps) {
+        private var currentItemId: String? = null
+
+        init {
+            binding.root.isClickable = true
+            binding.root.isFocusable = true
+            binding.root.setOnClickListener { currentItemId?.let(onItemSelected) }
+        }
+
+        fun bind(
+            item: StatsUiModel.Steps,
+            isSelected: Boolean,
+        ) {
+            currentItemId = item.id
             binding.stepCount.text = item.stepCount
             binding.stepGoal.text = item.goalText
             binding.stepCalories.text = item.caloriesText
             binding.stepDistance.text = item.distanceText
             binding.stepProgress.max = item.goal
             binding.stepProgress.setProgressCompat(item.progress, true)
+            updateSelection(isSelected)
+        }
+
+        fun updateSelection(isSelected: Boolean) {
+            binding.root.isSelected = isSelected
+            updateCardSelection(
+                binding.statCardOverlay,
+                binding.statCardBackgroundChart,
+                isSelected,
+                binding.root,
+            )
         }
     }
 
@@ -221,6 +341,64 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
         private const val VIEW_TYPE_HEART_RATE = 0
         private const val VIEW_TYPE_SLEEP = 1
         private const val VIEW_TYPE_STEPS = 2
+        private const val PAYLOAD_SELECTION = "payload_selection"
+        private const val SELECTION_ANIMATION_DURATION = 250L
+        private const val SELECTED_OVERLAY_ALPHA = 0.1f
+        private const val UNSELECTED_OVERLAY_ALPHA = 1f
+        private const val SELECTED_CHART_ALPHA = 1f
+        private const val UNSELECTED_CHART_ALPHA = 0.1f
+
+        private fun updateCardSelection(
+            overlayView: View,
+            backgroundView: View,
+            isSelected: Boolean,
+            itemView: View,
+        ) {
+            val overlayTarget =
+                if (isSelected) SELECTED_OVERLAY_ALPHA else UNSELECTED_OVERLAY_ALPHA
+            val backgroundTarget =
+                if (isSelected) SELECTED_CHART_ALPHA else UNSELECTED_CHART_ALPHA
+            val animate = itemView.isAttachedToWindow
+
+            overlayView.animate().cancel()
+            backgroundView.animate().cancel()
+
+            if (animate) {
+                overlayView
+                    .animate()
+                    .alpha(overlayTarget)
+                    .setDuration(SELECTION_ANIMATION_DURATION)
+                    .start()
+                backgroundView
+                    .animate()
+                    .alpha(backgroundTarget)
+                    .setDuration(SELECTION_ANIMATION_DURATION)
+                    .start()
+            } else {
+                overlayView.alpha = overlayTarget
+                backgroundView.alpha = backgroundTarget
+            }
+        }
+    }
+
+    private fun onItemSelected(itemId: String) {
+        val previousId = selectedItemId
+        selectedItemId = if (previousId == itemId) null else itemId
+
+        previousId?.let { id ->
+            val previousIndex = currentList.indexOfFirst { it.id == id }
+            if (previousIndex != -1) {
+                notifyItemChanged(previousIndex, PAYLOAD_SELECTION)
+            }
+        }
+
+        val newId = selectedItemId
+        if (newId != null) {
+            val newIndex = currentList.indexOfFirst { it.id == newId }
+            if (newIndex != -1) {
+                notifyItemChanged(newIndex, PAYLOAD_SELECTION)
+            }
+        }
     }
 }
 
