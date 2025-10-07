@@ -136,7 +136,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             renderBackgroundChart(
                 binding.statCardBackgroundChart,
                 item.chartValues,
-                MaterialColors.getColor(binding.root, MaterialR.attr.colorPrimary),
+                MaterialColors.getColor(binding.root, MaterialR.attr.colorPrimaryFixed),
                 null,
             )
             updateSelection(isSelected)
@@ -227,7 +227,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
                 PieDataSet(entries, null).apply {
                     colors =
                         listOf(
-                            MaterialColors.getColor(binding.root, MaterialR.attr.colorPrimary),
+                            MaterialColors.getColor(binding.root, MaterialR.attr.colorPrimaryFixed),
                             MaterialColors.getColor(binding.root, MaterialR.attr.colorPrimaryContainer),
                         )
                     sliceSpace = 2f
@@ -320,7 +320,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
                 StatsUiModel.Sleep.StageType.REM ->
                     MaterialColors.getColor(binding.root, MaterialR.attr.colorSecondary)
                 StatsUiModel.Sleep.StageType.LIGHT ->
-                    MaterialColors.getColor(binding.root, MaterialR.attr.colorPrimary)
+                    MaterialColors.getColor(binding.root, MaterialR.attr.colorPrimaryFixed)
                 StatsUiModel.Sleep.StageType.SLEEP ->
                     MaterialColors.getColor(binding.root, MaterialR.attr.colorTertiary)
                 StatsUiModel.Sleep.StageType.OTHER ->
