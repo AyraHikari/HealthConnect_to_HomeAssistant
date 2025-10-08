@@ -1,6 +1,7 @@
 package me.ayra.ha.healthconnect.ui
 
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +17,7 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.model.GradientColor
 import com.google.android.material.color.MaterialColors
 import me.ayra.ha.healthconnect.R
 import me.ayra.ha.healthconnect.databinding.ItemStatHeartRateBinding
@@ -315,81 +317,28 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             chart: LineChart,
             stages: List<StatsUiModel.Sleep.SleepStageChartEntry>,
         ) {
-            val points = stages.flatMap { it.points }
-            if (points.isEmpty()) {
-                chart.clear()
-                chart.invalidate()
-                return
-            }
-
-            val baseTimestamp = points.minOf { it.startEpochSecond }
-
-            val dataSets =
-                stages.mapNotNull { stage ->
-                    val stageColor = getStageColor(stage.type)
-
-                    val entries =
-                        stage.points
-                            .sortedBy { it.startEpochSecond }
-                            .map { point ->
-                                val relativeMinutes =
-                                    (point.startEpochSecond - baseTimestamp)
-                                        .coerceAtLeast(0L)
-                                        .toFloat() / 60f
-                                Entry(relativeMinutes, point.durationSeconds.toFloat())
-                            }
-
-                    if (entries.isEmpty()) {
-                        null
-                    } else {
-                        LineDataSet(entries, stage.type.name).apply {
-                            color = stageColor
-                            lineWidth = 2f
-                            mode = LineDataSet.Mode.LINEAR
-                            setDrawCircles(false)
-                            setDrawValues(false)
-                            setDrawFilled(false)
-                            highLightColor = Color.TRANSPARENT
+            val stageSegments =
+                stages
+                    .flatMap { stage ->
+                        stage.points.map { point ->
+                            Triple(stage.type, point.startEpochSecond, point.durationSeconds)
                         }
-                    }
-                }
+                    }.sortedBy { it.second }
 
-            if (dataSets.isEmpty()) {
+            if (stageSegments.isEmpty()) {
                 chart.clear()
                 chart.invalidate()
                 return
             }
 
-            val lineData = LineData(dataSets).apply { setDrawValues(false) }
-            val maxValue =
-                points.maxOfOrNull { it.durationSeconds.toFloat() }?.takeIf { it > 0f } ?: 1f
+            val chartValues = stageSegments.map { it.third.toFloat() }
+            val chartColors = stageSegments.map { getStageColor(it.first) }
 
-            chart.apply {
-                data = lineData
-                description.isEnabled = false
-                legend.isEnabled = false
-                setTouchEnabled(false)
-                setScaleEnabled(false)
-                isDragEnabled = false
-                setPinchZoom(false)
-                setNoDataText("")
-                axisLeft.apply {
-                    isEnabled = false
-                    axisMinimum = 0f
-                    axisMaximum = maxValue * 1.05f
-                    setDrawGridLines(false)
-                    setDrawAxisLine(false)
-                }
-                axisRight.isEnabled = false
-                xAxis.apply {
-                    isEnabled = false
-                    axisMinimum = 0f
-                    setDrawGridLines(false)
-                    setDrawAxisLine(false)
-                }
-                setViewPortOffsets(0f, 0f, 0f, 0f)
-                invalidate()
-            }
+            val fallbackColor =
+                chartColors.firstOrNull()
+                    ?: MaterialColors.getColor(chart, MaterialR.attr.colorPrimaryFixed)
+
+            renderBackgroundChart(chart, chartValues, fallbackColor, null, chartColors)
         }
 
         private fun getStageColor(stageType: StatsUiModel.Sleep.StageType): Int =
@@ -469,6 +418,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             values: List<Float>,
             color: Int,
             maxValue: Float?,
+            entryColors: List<Int>? = null,
         ) {
             if (values.isEmpty()) {
                 chart.clear()
@@ -481,15 +431,47 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
 
             val dataSet =
                 LineDataSet(entries, null).apply {
-                    this.color = color
                     lineWidth = 2f
                     mode = LineDataSet.Mode.CUBIC_BEZIER
                     setDrawCircles(false)
                     setDrawValues(false)
                     setDrawFilled(true)
-                    fillColor = ColorUtils.setAlphaComponent(color, 120)
-                    fillAlpha = 120
                     highLightColor = Color.TRANSPARENT
+                    val resolvedColors = entryColors?.takeIf { it.isNotEmpty() }
+
+                    if (resolvedColors == null) {
+                        this.color = color
+                        fillDrawable = null
+                        fillColor = ColorUtils.setAlphaComponent(color, 120)
+                        fillAlpha = 120
+                    } else {
+                        colors = resolvedColors
+
+                        if (resolvedColors.size >= 2) {
+                            val gradientColors =
+                                resolvedColors
+                                    .zipWithNext()
+                                    .map { (start, end) -> GradientColor(start, end) }
+
+                            if (gradientColors.isNotEmpty()) {
+                                setGradientColors(gradientColors)
+                            }
+                        }
+
+                        val gradientFillColors =
+                            resolvedColors
+                                .map { ColorUtils.setAlphaComponent(it, 120) }
+                                .toIntArray()
+
+                        fillDrawable =
+                            GradientDrawable(
+                                GradientDrawable.Orientation.LEFT_RIGHT,
+                                gradientFillColors,
+                            ).apply {
+                                gradientType = GradientDrawable.LINEAR_GRADIENT
+                            }
+                        fillAlpha = 255
+                    }
                 }
 
             val lineData = LineData(dataSet).apply { setDrawValues(false) }
