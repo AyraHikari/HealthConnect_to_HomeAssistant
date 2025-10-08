@@ -28,9 +28,9 @@ android {
     defaultConfig {
         applicationId = "me.ayra.ha.healthconnect"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 4
-        versionName = "0.4"
+        targetSdk = 34
+        versionCode = 5
+        versionName = "0.4.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
