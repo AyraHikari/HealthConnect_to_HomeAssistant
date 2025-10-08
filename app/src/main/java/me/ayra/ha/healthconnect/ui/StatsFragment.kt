@@ -36,6 +36,7 @@ import me.ayra.ha.healthconnect.data.getStats
 import me.ayra.ha.healthconnect.data.saveStats
 import me.ayra.ha.healthconnect.databinding.FragmentStatsBinding
 import me.ayra.ha.healthconnect.ui.StatsUiModel.Sleep.StageType
+import me.ayra.ha.healthconnect.utils.DataStore.toJson
 import me.ayra.ha.healthconnect.utils.HealthConnectManager
 import me.ayra.ha.healthconnect.utils.TimeUtils.toTimeCount
 import java.time.Duration
@@ -128,10 +129,16 @@ class StatsFragment : Fragment() {
                     return@launch
                 }
 
-                val records =
+                val syncDays = requireContext().getSyncDays()
+                val (records, lastSleepSessions) =
                     withContext(Dispatchers.IO) {
-                        runCatching { healthConnectManager.getAll(requireContext().getSyncDays()) }
-                            .getOrNull()
+                        val allRecords =
+                            runCatching { healthConnectManager.getAll(syncDays) }
+                                .getOrNull()
+                        val sleepRecords =
+                            runCatching { healthConnectManager.getLastSleep() }
+                                .getOrNull()
+                        allRecords to sleepRecords
                     }
 
                 binding.swipeRefresh.isRefreshing = false
@@ -145,10 +152,9 @@ class StatsFragment : Fragment() {
                 }
 
                 val heartRateRecords = records["HeartRate"] as? List<*> ?: emptyList<Any?>()
-                val sleepRecords = records["SleepSession"] as? List<*> ?: emptyList<Any?>()
                 val stepsRecords = records["Steps"] as? List<*> ?: emptyList<Any?>()
                 val samples = extractHeartRateSamples(heartRateRecords)
-                val sleepStats = extractSleepStats(sleepRecords)
+                val sleepStats = extractSleepStats(lastSleepSessions ?: emptyList())
                 val stepsStats = extractStepsStats(stepsRecords)
                 val statsData = StatsData(heartRate = samples, sleep = sleepStats, steps = stepsStats)
                 requireContext().saveStats(statsData)
@@ -425,43 +431,63 @@ class StatsFragment : Fragment() {
         )
     }
 
-    private fun extractSleepStats(records: List<*>): SleepStats? {
-        val sessions = records.filterIsInstance<SleepSessionRecord>()
+    private fun extractSleepStats(sessions: List<SleepSessionRecord>): SleepStats? {
         if (sessions.isEmpty()) return null
 
-        val latestSession = sessions.maxByOrNull { it.endTime } ?: return null
-        val totalDuration =
-            Duration.between(latestSession.startTime, latestSession.endTime).seconds.coerceAtLeast(0L)
-        if (totalDuration <= 0L) return null
+        val accumulator = SleepAccumulator()
 
-        val stageDurations = mutableMapOf<Int, Long>()
-        var sleepDuration = 0L
-
-        latestSession.stages.forEach { stage ->
-            val duration =
-                Duration.between(stage.startTime, stage.endTime).seconds.coerceAtLeast(0L)
+        sessions.forEach { session ->
+            val sessionStart = session.startTime.epochSecond
+            val sessionEnd = session.endTime.epochSecond
+            val duration = (sessionEnd - sessionStart).coerceAtLeast(0L)
             if (duration <= 0L) return@forEach
 
-            stageDurations[stage.stage] = stageDurations.getOrDefault(stage.stage, 0L) + duration
+            accumulator.start =
+                accumulator.start?.let { minOf(it, sessionStart) } ?: sessionStart
+            accumulator.end = accumulator.end?.let { maxOf(it, sessionEnd) } ?: sessionEnd
+            accumulator.totalDuration += duration
 
-            if (!isAwakeStage(stage.stage)) {
-                sleepDuration += duration
+            session.stages.forEach { stage ->
+                val stageDuration =
+                    (stage.endTime.epochSecond - stage.startTime.epochSecond).coerceAtLeast(0L)
+                if (stageDuration <= 0L) return@forEach
+
+                accumulator.stages[stage.stage] =
+                    accumulator.stages.getOrDefault(stage.stage, 0L) + stageDuration
+
+                if (!isAwakeStage(stage.stage)) {
+                    accumulator.sleepDuration += stageDuration
+                }
             }
         }
 
+        val totalDuration = accumulator.totalDuration
+        val start = accumulator.start
+        val end = accumulator.end
+        if (totalDuration <= 0L || start == null || end == null) return null
+
+        val effectiveSleepDuration =
+            accumulator.sleepDuration.coerceAtMost(totalDuration).takeIf { it > 0L } ?: totalDuration
+
         val aggregatedStages =
-            stageDurations.map { (stageType, duration) ->
+            accumulator.stages.map { (stageType, duration) ->
                 SleepStageDuration(stageType = stageType, durationSeconds = duration)
             }
 
-        val effectiveSleepDuration = sleepDuration.coerceAtMost(totalDuration)
-
         return SleepStats(
             totalDurationSeconds = totalDuration,
-            sleepDurationSeconds = if (effectiveSleepDuration > 0L) effectiveSleepDuration else totalDuration,
+            sleepDurationSeconds = effectiveSleepDuration,
             stageDurations = aggregatedStages,
         )
     }
+
+    private data class SleepAccumulator(
+        var start: Long? = null,
+        var end: Long? = null,
+        var totalDuration: Long = 0L,
+        var sleepDuration: Long = 0L,
+        val stages: MutableMap<Int, Long> = mutableMapOf(),
+    )
 
     private fun Int.toStageType(): StageType =
         when (this) {
