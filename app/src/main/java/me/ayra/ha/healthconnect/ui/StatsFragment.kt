@@ -28,6 +28,7 @@ import me.ayra.ha.healthconnect.data.DEFAULT_SYNC_DAYS
 import me.ayra.ha.healthconnect.data.HeartRateSample
 import me.ayra.ha.healthconnect.data.Settings.getSyncDays
 import me.ayra.ha.healthconnect.data.SleepStageDuration
+import me.ayra.ha.healthconnect.data.SleepStageSession
 import me.ayra.ha.healthconnect.data.SleepStats
 import me.ayra.ha.healthconnect.data.StatsData
 import me.ayra.ha.healthconnect.data.StepsStats
@@ -401,25 +402,80 @@ class StatsFragment : Fragment() {
                 0f
             }
 
-        val restfulStages = sleepStats.stageDurations.filterNot { isAwakeStage(it.stageType) }
-        val restfulTotal = restfulStages.sumOf { it.durationSeconds }
+        val relevantStages =
+            sleepStats.stageDurations
+                .filterNot { isAwakeStage(it.stageType) }
+                .mapNotNull { stage ->
+                    val stageType = stage.stageType.toStageType()
+                    when (stageType) {
+                        StageType.DEEP, StageType.LIGHT, StageType.REM -> stage to stageType
+                        else -> null
+                    }
+                }
+
+        val relevantTotal = relevantStages.sumOf { it.first.durationSeconds }
+        val stageOrder = listOf(StageType.DEEP, StageType.LIGHT, StageType.REM)
         val stagePercentages =
-            if (restfulTotal > 0L) {
-                restfulStages
-                    .map { stage ->
+            if (relevantTotal > 0L) {
+                relevantStages
+                    .map { (stage, stageType) ->
                         val percentage =
-                            (stage.durationSeconds.toFloat() / restfulTotal.toFloat()) * 100f
+                            (stage.durationSeconds.toFloat() / relevantTotal.toFloat()) * 100f
                         StatsUiModel.Sleep.SleepStagePercentage(
-                            type = stage.stageType.toStageType(),
+                            type = stageType,
                             label = stage.stageType.toStageLabel(),
                             percentage = percentage,
                         )
                     }.filter { it.percentage > 0f }
+                    .sortedBy { stageOrder.indexOf(it.type).takeIf { index -> index >= 0 } ?: Int.MAX_VALUE }
             } else {
                 emptyList()
             }
 
-        val backgroundChartValues = listOf(0f, sleepPercentage, sleepPercentage, 0f)
+        val backgroundChartStageOrder =
+            listOf(
+                StageType.AWAKE,
+                StageType.LIGHT,
+                StageType.DEEP,
+                StageType.REM,
+            )
+
+        val stageSessionEntries =
+            sleepStats.stageSessions
+                .mapNotNull { session ->
+                    val stageType = session.stageType.toStageType()
+                    when (stageType) {
+                        StageType.AWAKE, StageType.DEEP, StageType.LIGHT, StageType.REM ->
+                            stageType to session
+                        else -> null
+                    }
+                }
+
+        val stageDurationEntries =
+            stageSessionEntries
+                .groupBy({ it.first }, { it.second })
+                .mapNotNull { (stageType, sessions) ->
+                    val points =
+                        sessions
+                            .sortedBy { it.startEpochSecond }
+                            .mapNotNull { session ->
+                                session.durationSeconds
+                                    .takeIf { it > 0L }
+                                    ?.let {
+                                        StatsUiModel.Sleep.SleepStageChartEntry.SleepStageChartPoint(
+                                            startEpochSecond = session.startEpochSecond,
+                                            durationSeconds = it,
+                                        )
+                                    }
+                            }
+
+                    points.takeIf { it.isNotEmpty() }?.let {
+                        StatsUiModel.Sleep.SleepStageChartEntry(
+                            type = stageType,
+                            points = it,
+                        )
+                    }
+                }.sortedBy { backgroundChartStageOrder.indexOf(it.type) }
 
         return StatsUiModel.Sleep(
             sleepTimeText = sleepTimeText,
@@ -427,7 +483,7 @@ class StatsFragment : Fragment() {
             sleepPercentage = sleepPercentage,
             awakePercentage = awakePercentage,
             stagePercentages = stagePercentages,
-            backgroundChartValues = backgroundChartValues,
+            backgroundChartStages = stageDurationEntries,
         )
     }
 
@@ -448,12 +504,19 @@ class StatsFragment : Fragment() {
             accumulator.totalDuration += duration
 
             session.stages.forEach { stage ->
+                val startEpochSecond = stage.startTime.epochSecond
                 val stageDuration =
-                    (stage.endTime.epochSecond - stage.startTime.epochSecond).coerceAtLeast(0L)
+                    (stage.endTime.epochSecond - startEpochSecond).coerceAtLeast(0L)
                 if (stageDuration <= 0L) return@forEach
 
                 accumulator.stages[stage.stage] =
                     accumulator.stages.getOrDefault(stage.stage, 0L) + stageDuration
+                accumulator.stageSessions +=
+                    SleepStageSession(
+                        stageType = stage.stage,
+                        startEpochSecond = startEpochSecond,
+                        durationSeconds = stageDuration,
+                    )
 
                 if (!isAwakeStage(stage.stage)) {
                     accumulator.sleepDuration += stageDuration
@@ -478,6 +541,7 @@ class StatsFragment : Fragment() {
             totalDurationSeconds = totalDuration,
             sleepDurationSeconds = effectiveSleepDuration,
             stageDurations = aggregatedStages,
+            stageSessions = accumulator.stageSessions.sortedBy { it.startEpochSecond },
         )
     }
 
@@ -487,6 +551,7 @@ class StatsFragment : Fragment() {
         var totalDuration: Long = 0L,
         var sleepDuration: Long = 0L,
         val stages: MutableMap<Int, Long> = mutableMapOf(),
+        val stageSessions: MutableList<SleepStageSession> = mutableListOf(),
     )
 
     private fun Int.toStageType(): StageType =
@@ -495,6 +560,10 @@ class StatsFragment : Fragment() {
             SleepSessionRecord.STAGE_TYPE_REM -> StageType.REM
             SleepSessionRecord.STAGE_TYPE_LIGHT -> StageType.LIGHT
             SleepSessionRecord.STAGE_TYPE_SLEEPING -> StageType.SLEEP
+            SleepSessionRecord.STAGE_TYPE_AWAKE,
+            SleepSessionRecord.STAGE_TYPE_AWAKE_IN_BED,
+            SleepSessionRecord.STAGE_TYPE_OUT_OF_BED,
+            -> StageType.AWAKE
             else -> StageType.OTHER
         }
 

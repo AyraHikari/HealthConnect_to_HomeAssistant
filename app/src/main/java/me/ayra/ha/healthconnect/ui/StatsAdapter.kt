@@ -173,12 +173,7 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             currentItemId = item.id
             binding.sleepTime.text = item.sleepTimeText
 
-            renderBackgroundChart(
-                binding.statCardBackgroundChart,
-                item.backgroundChartValues,
-                MaterialColors.getColor(binding.root, MaterialR.attr.colorTertiary),
-                100f,
-            )
+            renderSleepBackgroundChart(binding.statCardBackgroundChart, item.backgroundChartStages)
 
             setupQualityChart(item)
             setupStageChart(item)
@@ -316,8 +311,91 @@ class StatsAdapter : ListAdapter<StatsUiModel, RecyclerView.ViewHolder>(StatsDif
             }
         }
 
+        private fun renderSleepBackgroundChart(
+            chart: LineChart,
+            stages: List<StatsUiModel.Sleep.SleepStageChartEntry>,
+        ) {
+            val points = stages.flatMap { it.points }
+            if (points.isEmpty()) {
+                chart.clear()
+                chart.invalidate()
+                return
+            }
+
+            val baseTimestamp = points.minOf { it.startEpochSecond }
+
+            val dataSets =
+                stages.mapNotNull { stage ->
+                    val stageColor = getStageColor(stage.type)
+
+                    val entries =
+                        stage.points
+                            .sortedBy { it.startEpochSecond }
+                            .map { point ->
+                                val relativeMinutes =
+                                    (point.startEpochSecond - baseTimestamp)
+                                        .coerceAtLeast(0L)
+                                        .toFloat() / 60f
+                                Entry(relativeMinutes, point.durationSeconds.toFloat())
+                            }
+
+                    if (entries.isEmpty()) {
+                        null
+                    } else {
+                        LineDataSet(entries, stage.type.name).apply {
+                            color = stageColor
+                            lineWidth = 2f
+                            mode = LineDataSet.Mode.LINEAR
+                            setDrawCircles(false)
+                            setDrawValues(false)
+                            setDrawFilled(false)
+                            highLightColor = Color.TRANSPARENT
+                        }
+                    }
+                }
+
+            if (dataSets.isEmpty()) {
+                chart.clear()
+                chart.invalidate()
+                return
+            }
+
+            val lineData = LineData(dataSets).apply { setDrawValues(false) }
+            val maxValue =
+                points.maxOfOrNull { it.durationSeconds.toFloat() }?.takeIf { it > 0f } ?: 1f
+
+            chart.apply {
+                data = lineData
+                description.isEnabled = false
+                legend.isEnabled = false
+                setTouchEnabled(false)
+                setScaleEnabled(false)
+                isDragEnabled = false
+                setPinchZoom(false)
+                setNoDataText("")
+                axisLeft.apply {
+                    isEnabled = false
+                    axisMinimum = 0f
+                    axisMaximum = maxValue * 1.05f
+                    setDrawGridLines(false)
+                    setDrawAxisLine(false)
+                }
+                axisRight.isEnabled = false
+                xAxis.apply {
+                    isEnabled = false
+                    axisMinimum = 0f
+                    setDrawGridLines(false)
+                    setDrawAxisLine(false)
+                }
+                setViewPortOffsets(0f, 0f, 0f, 0f)
+                invalidate()
+            }
+        }
+
         private fun getStageColor(stageType: StatsUiModel.Sleep.StageType): Int =
             when (stageType) {
+                StatsUiModel.Sleep.StageType.AWAKE ->
+                    MaterialColors.getColor(binding.root, MaterialR.attr.colorOnSurfaceVariant)
                 StatsUiModel.Sleep.StageType.DEEP ->
                     MaterialColors.getColor(binding.root, MaterialR.attr.colorTertiary)
                 StatsUiModel.Sleep.StageType.REM ->
@@ -536,7 +614,7 @@ sealed class StatsUiModel(
         val sleepPercentage: Float,
         val awakePercentage: Float,
         val stagePercentages: List<SleepStagePercentage>,
-        val backgroundChartValues: List<Float> = emptyList(),
+        val backgroundChartStages: List<SleepStageChartEntry> = emptyList(),
         override val spanSize: Int = 2,
     ) : StatsUiModel(id, spanSize) {
         data class SleepStagePercentage(
@@ -545,7 +623,18 @@ sealed class StatsUiModel(
             val percentage: Float,
         )
 
+        data class SleepStageChartEntry(
+            val type: StageType,
+            val points: List<SleepStageChartPoint>,
+        ) {
+            data class SleepStageChartPoint(
+                val startEpochSecond: Long,
+                val durationSeconds: Long,
+            )
+        }
+
         enum class StageType {
+            AWAKE,
             DEEP,
             REM,
             LIGHT,

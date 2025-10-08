@@ -19,10 +19,17 @@ data class SleepStageDuration(
     val durationSeconds: Long,
 )
 
+data class SleepStageSession(
+    val stageType: Int,
+    val startEpochSecond: Long,
+    val durationSeconds: Long,
+)
+
 data class SleepStats(
     val totalDurationSeconds: Long,
     val sleepDurationSeconds: Long,
     val stageDurations: List<SleepStageDuration> = emptyList(),
+    val stageSessions: List<SleepStageSession> = emptyList(),
 )
 
 data class StepsStats(
