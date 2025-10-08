@@ -7,10 +7,14 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 </p>
 
 ## Features
-- Syncs heart rate, sleep, steps, weight, exercise, oxygen, calories, etc
-- Background sync support
-- Customizable sensor name and update interval
-- Works locally — no SSL server required
+- Syncs Health Connect metrics to Home Assistant, including heart rate, sleep stages, steps, weight, body temperature, exercise sessions, blood oxygen saturation, hydration, and calories burned data.
+- Background sync support with foreground service for better reliable.
+- Customizable sensor name and update interval in app settings.
+- Works locally — no SSL server required.
+- Toggle which data categories are exported, choose the entity ID, and adjust sync ranges (1–30 days) and intervals directly from the in-app settings.
+- Automatic background sync powered by WorkManager with retry logic, battery-friendly constraints, and boot persistence, plus an optional foreground service for resilient syncing.
+- Manual sync controls, last sync history, and error reporting right on the home screen, backed by a home screen widget for one-tap syncing and status updates.
+- Built-in stats dashboard with cached heart rate, sleep, and steps charts so you can review trends even when offline.
 
 <h2> Screenshots</h2>
 
