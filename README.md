@@ -16,8 +16,9 @@ Easily export your Health Connect data to Home Assistant and visualize it with b
 
 <details><summary><b>Click here to expand</b></summary>
 <p float="left">
-  <img src="https://github.com/user-attachments/assets/24e2ef96-fb43-4d98-90b4-e46f5d9e103d" width="30%" />
-  <img src="https://github.com/user-attachments/assets/19631fca-6330-47ec-b3c5-37cdc0bad1fd" width="30%" />
+  <img src="https://github.com/user-attachments/assets/c3dcc859-1ca3-4af4-a753-6855436568ca" width="30%" />
+  <img src="https://github.com/user-attachments/assets/c02e6796-2d62-482c-82c2-2af003645b74" width="30%" />
+  <img src="https://github.com/user-attachments/assets/d4be983f-bb19-4c6d-9a95-290477b97cab" width="30%" />
 </p>
 </details>
 
