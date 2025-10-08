@@ -121,6 +121,17 @@ class SyncWorker(
         if (applicationContext.getAutoSync() == false) return Result.success()
 
         val context = applicationContext
+
+        val isLoginConfigured =
+            context.getSettings("url") != null &&
+                context.getSettings("token") != null &&
+                context.getSettings("sensor") != null
+
+        if (!isLoginConfigured) {
+            Log.i(TAG, "Skipping sync because Home Assistant login is not configured")
+            return Result.success()
+        }
+
         val notificationManager = context.getSystemService(NotificationManager::class.java)
 
         setForeground(createForegroundInfo(notificationManager))
