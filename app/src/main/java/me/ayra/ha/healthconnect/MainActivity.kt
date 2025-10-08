@@ -12,17 +12,24 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.health.connect.client.PermissionController
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.ayra.ha.healthconnect.ForegroundService.Companion.runServiceIfEnabled
 import me.ayra.ha.healthconnect.data.Settings.isNotificationPromptDisabled
 import me.ayra.ha.healthconnect.data.Settings.setNotificationPromptDisabled
 import me.ayra.ha.healthconnect.databinding.ActivityMainBinding
 import me.ayra.ha.healthconnect.network.initializeGlideWithUnsafeOkHttp
+import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
 import me.ayra.ha.healthconnect.utils.Coroutines.ioSafe
 import me.ayra.ha.healthconnect.utils.HealthConnectManager
 import me.ayra.ha.healthconnect.utils.healthConnectPermissions
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
@@ -67,6 +74,8 @@ class MainActivity : AppCompatActivity() {
                 applicationContext.setNotificationPromptDisabled(false)
             }
         }
+
+    private val updateClient by lazy { OkHttpClient() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -183,10 +192,47 @@ class MainActivity : AppCompatActivity() {
         hc = HealthConnectManager(this)
 
         promptForNotificationPermissionIfNeeded()
+        checkForUpdates()
 
         thread {
             ioSafe {
                 checkAndRequestPermissions()
+            }
+        }
+    }
+
+    private fun checkForUpdates() {
+        lifecycleScope.launch {
+            val shouldPromptForUpdate =
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        val request =
+                            Request
+                                .Builder()
+                                .url("https://ayra.eu.org/project/updater/hc?version=${BuildConfig.VERSION_CODE}")
+                                .get()
+                                .build()
+                        updateClient
+                            .newCall(request)
+                            .execute()
+                            .use { response ->
+                                if (!response.isSuccessful) return@use false
+                                response.body
+                                    ?.string()
+                                    ?.trim()
+                                    ?.equals("true", ignoreCase = true) == true
+                            }
+                    }.getOrDefault(false)
+                }
+
+            if (shouldPromptForUpdate && !isFinishing && !isDestroyed) {
+                MaterialAlertDialogBuilder(this@MainActivity)
+                    .setTitle(R.string.update_available_title)
+                    .setMessage(R.string.update_available_message)
+                    .setPositiveButton(R.string.update_available_positive) { _, _ ->
+                        openUrlInBrowser("https://github.com/AyraHikari/HealthConnect_to_HomeAssistant/releases/latest")
+                    }.setNegativeButton(R.string.cancel, null)
+                    .show()
             }
         }
     }
