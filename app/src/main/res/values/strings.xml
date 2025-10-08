@@ -71,6 +71,7 @@
     <string name="update_available_title">Update available</string>
     <string name="update_available_message">A newer version is available. Download the latest release to stay up to date.</string>
     <string name="update_available_positive">Update</string>
+    <string name="update_available_neutral">Don\'t ask again</string>
 
     <string name="update_interval_title">Update interval</string>
     <string name="cancel">Cancel</string>
