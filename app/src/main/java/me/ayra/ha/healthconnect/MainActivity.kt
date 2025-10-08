@@ -20,7 +20,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.ayra.ha.healthconnect.ForegroundService.Companion.runServiceIfEnabled
+import me.ayra.ha.healthconnect.data.Settings.getIgnoredUpdateVersion
 import me.ayra.ha.healthconnect.data.Settings.isNotificationPromptDisabled
+import me.ayra.ha.healthconnect.data.Settings.setIgnoredUpdateVersion
 import me.ayra.ha.healthconnect.data.Settings.setNotificationPromptDisabled
 import me.ayra.ha.healthconnect.databinding.ActivityMainBinding
 import me.ayra.ha.healthconnect.network.initializeGlideWithUnsafeOkHttp
@@ -202,6 +204,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkForUpdates() {
+        if (applicationContext.getIgnoredUpdateVersion() == BuildConfig.VERSION_CODE) return
+
         lifecycleScope.launch {
             val shouldPromptForUpdate =
                 withContext(Dispatchers.IO) {
@@ -232,7 +236,9 @@ class MainActivity : AppCompatActivity() {
                     .setPositiveButton(R.string.update_available_positive) { _, _ ->
                         openUrlInBrowser("https://github.com/AyraHikari/HealthConnect_to_HomeAssistant/releases/latest")
                     }.setNegativeButton(R.string.cancel, null)
-                    .show()
+                    .setNeutralButton(R.string.update_available_neutral) { _, _ ->
+                        applicationContext.setIgnoredUpdateVersion(BuildConfig.VERSION_CODE)
+                    }.show()
             }
         }
     }

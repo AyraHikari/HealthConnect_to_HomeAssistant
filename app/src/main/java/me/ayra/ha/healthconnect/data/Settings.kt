@@ -47,6 +47,12 @@ object Settings {
         setSettings("notificationPermissionPromptDisabled", value)
     }
 
+    fun Context.getIgnoredUpdateVersion(): Int? = getKey<Int>(DATA, "ignoredUpdateVersion")
+
+    fun Context.setIgnoredUpdateVersion(value: Int) {
+        setKey(DATA, "ignoredUpdateVersion", value)
+    }
+
     fun Context.getLastSync(): Long? = getKey<Long>(DATA, "lastSync")
 
     fun Context.setLastSync(value: Long) = setKey(DATA, "lastSync", value)
