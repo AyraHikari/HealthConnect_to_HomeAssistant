@@ -101,6 +101,7 @@
     <string name="crash_dialog_title">Unexpected error detected</string>
     <string name="crash_dialog_message">The app crashed previously. Share the following log with the developer to help fix the issue:</string>
     <string name="crash_dialog_copy">Copy log</string>
+    <string name="crash_dialog_report_issue">Report issue</string>
     <string name="crash_dialog_copied">Crash log copied</string>
     <string name="crash_dialog_clipboard_label">Crash log</string>
 

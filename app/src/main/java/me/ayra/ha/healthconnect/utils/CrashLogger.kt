@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.ClipData
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.os.Process
 import android.util.Log
@@ -15,6 +16,7 @@ import androidx.core.content.edit
 import androidx.core.content.getSystemService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import me.ayra.ha.healthconnect.R
+import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
 import java.io.PrintWriter
 import java.io.StringWriter
 import kotlin.math.roundToInt
@@ -166,7 +168,10 @@ internal fun Activity.showCrashLogDialog(
         .setTitle(R.string.crash_dialog_title)
         .setView(container)
         .setPositiveButton(android.R.string.ok, null)
-        .setNeutralButton(R.string.crash_dialog_copy) { _, _ ->
+        .setNegativeButton(R.string.crash_dialog_report_issue) { _, _ ->
+            openCrashLogIssue(crashLog)
+            exitProcess(0)
+        }.setNeutralButton(R.string.crash_dialog_copy) { _, _ ->
             copyCrashLogToClipboard(crashLog)
         }.setOnDismissListener {
             onDismiss?.invoke()
@@ -182,4 +187,21 @@ private fun Activity.copyCrashLogToClipboard(crashLog: String) {
         ),
     )
     Toast.makeText(this, R.string.crash_dialog_copied, Toast.LENGTH_SHORT).show()
+}
+
+private fun Activity.openCrashLogIssue(crashLog: String) {
+    val formattedLog = crashLog.trimEnd()
+    val issueBody =
+        """
+        ### Crash log
+
+        ```
+        $formattedLog
+        ```
+        """.trimIndent()
+    val issueUrl =
+        "https://github.com/AyraHikari/HealthConnect_to_HomeAssistant/issues/new?body=" +
+            Uri.encode(issueBody)
+
+    openUrlInBrowser(issueUrl)
 }
