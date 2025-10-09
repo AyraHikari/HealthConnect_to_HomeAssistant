@@ -180,6 +180,12 @@ class SyncWorker(
                     Log.w(TAG, "Missing Health Connect permissions")
                     return Result.failure()
                 }
+                if (!hasBackgroundReadPermission()) {
+                    Log.w(
+                        TAG,
+                        "Background read permission not granted; background sync may be delayed",
+                    )
+                }
             }
 
         // 2. Get health data with retry logic

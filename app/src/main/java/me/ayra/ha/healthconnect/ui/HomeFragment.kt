@@ -38,6 +38,7 @@ import me.ayra.ha.healthconnect.utils.UiUtils.showSuccess
 import me.ayra.ha.healthconnect.utils.UiUtils.startRotate
 import me.ayra.ha.healthconnect.utils.UiUtils.stopRotate
 import me.ayra.ha.healthconnect.utils.healthConnectPermissions
+import me.ayra.ha.healthconnect.utils.healthConnectReadPermissions
 import me.ayra.ha.healthconnect.widget.SyncWidgetProvider
 import kotlin.concurrent.thread
 
@@ -51,7 +52,7 @@ class HomeFragment : Fragment() {
         registerForActivityResult(
             PermissionController.createRequestPermissionResultContract(),
         ) { granted ->
-            if (granted.containsAll(healthConnectPermissions)) {
+            if (granted.containsAll(healthConnectReadPermissions)) {
                 // All permissions granted
             } else {
                 // Some permissions denied

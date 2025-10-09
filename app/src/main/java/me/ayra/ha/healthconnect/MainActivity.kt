@@ -29,7 +29,9 @@ import me.ayra.ha.healthconnect.network.initializeGlideWithUnsafeOkHttp
 import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
 import me.ayra.ha.healthconnect.utils.Coroutines.ioSafe
 import me.ayra.ha.healthconnect.utils.HealthConnectManager
+import me.ayra.ha.healthconnect.utils.healthConnectBackgroundPermission
 import me.ayra.ha.healthconnect.utils.healthConnectPermissions
+import me.ayra.ha.healthconnect.utils.healthConnectReadPermissions
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import kotlin.concurrent.thread
@@ -56,10 +58,12 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionActivityContract = PermissionController.createRequestPermissionResultContract()
     private val requestPermissions =
         registerForActivityResult(requestPermissionActivityContract) { granted ->
-            if (granted.containsAll(healthConnectPermissions)) {
-                // Permissions successfully granted
-            } else {
-                requestPermissionLauncher.launch(healthConnectPermissions.first())
+            val missingReadPermissions = healthConnectReadPermissions - granted
+
+            if (missingReadPermissions.isEmpty() &&
+                !granted.contains(healthConnectBackgroundPermission)
+            ) {
+                requestPermissionLauncher.launch(healthConnectBackgroundPermission)
             }
         }
 

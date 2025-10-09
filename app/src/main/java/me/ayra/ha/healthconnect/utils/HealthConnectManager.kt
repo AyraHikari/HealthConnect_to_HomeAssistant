@@ -51,9 +51,10 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-val healthConnectPermissions =
+private val backgroundPermission = HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND
+
+private val readPermissions =
     setOf(
-        HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND,
         HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
         HealthPermission.getReadPermission(BasalBodyTemperatureRecord::class),
         HealthPermission.getReadPermission(BloodGlucoseRecord::class),
@@ -90,6 +91,16 @@ val healthConnectPermissions =
         HealthPermission.getReadPermission(WheelchairPushesRecord::class),
     )
 
+val healthConnectPermissions: Set<String> =
+    linkedSetOf<String>().apply {
+        add(backgroundPermission)
+        addAll(readPermissions)
+    }
+
+val healthConnectReadPermissions: Set<String> = readPermissions
+
+val healthConnectBackgroundPermission: String = backgroundPermission
+
 class HealthConnectManager(
     private val context: Context,
 ) {
@@ -99,8 +110,13 @@ class HealthConnectManager(
 
     suspend fun hasAllPermissions(): Boolean =
         healthConnectClient.permissionController.getGrantedPermissions().containsAll(
-            healthConnectPermissions,
+            readPermissions,
         )
+
+    suspend fun hasBackgroundReadPermission(): Boolean =
+        healthConnectClient.permissionController
+            .getGrantedPermissions()
+            .contains(backgroundPermission)
 
     fun requestPermissionsActivityContract(): ActivityResultContract<Set<String>, Set<String>> =
         PermissionController.createRequestPermissionResultContract()
