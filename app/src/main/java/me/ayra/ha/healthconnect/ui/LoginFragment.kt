@@ -43,6 +43,16 @@ class LoginFragment : Fragment() {
         val values = resources.getStringArray(R.array.sync_time)
 
         binding.apply {
+            val savedInterval = context?.getSettings("updateInterval")?.toString()
+            val defaultInterval = "3600"
+            val selectedIndex =
+                savedInterval?.let { interval ->
+                    values.indexOf(interval).takeIf { it != -1 }
+                } ?: values.indexOf(defaultInterval).takeIf { it != -1 } ?: 0
+
+            updateInterval.setText(labels[selectedIndex])
+            updateInterval.tag = values[selectedIndex]
+
             updateIntervalHolder.setOnClickListener {
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Update interval")
