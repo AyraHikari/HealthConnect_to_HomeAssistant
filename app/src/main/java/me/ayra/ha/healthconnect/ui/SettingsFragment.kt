@@ -147,12 +147,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun setupSensorEntityPreference() {
         findPreference<Preference>("sensorEntity")?.apply {
-            summary = "sensor.${context.getSettings("sensor")}"
+            summary = formatSensorSummary(context.getSettings("sensor"))
             setOnPreferenceClickListener {
-                showInputDialog("sensor", getString(R.string.login_sensor_hint), summary?.toString())
+                showInputDialog("sensor", getString(R.string.login_sensor_hint), context.getSettings("sensor"))
                 true
             }
         }
+    }
+
+    private fun formatSensorSummary(sensorName: String?): String {
+        val sanitized = sensorName?.takeIf { it.isNotBlank() }
+        return sanitized?.let { "sensor.$it" } ?: getString(R.string.sensor_hint)
     }
 
     private fun setupHealthDataPreference() {
@@ -295,7 +300,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
                                             "••••"
                                         }
                                 }
-                            "sensor" -> findPreference<Preference>("sensorEntity")?.summary = newValue
+                            "sensor" ->
+                                findPreference<Preference>("sensorEntity")?.summary =
+                                    formatSensorSummary(newValue)
                         }
                         dialog.dismiss()
                     }
