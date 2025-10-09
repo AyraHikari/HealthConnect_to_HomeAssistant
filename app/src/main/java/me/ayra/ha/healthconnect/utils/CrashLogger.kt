@@ -122,7 +122,10 @@ class CrashLogLifecycleCallbacks(
     override fun onActivityDestroyed(activity: Activity) = Unit
 }
 
-internal fun Activity.showCrashLogDialog(crashLog: String) {
+internal fun Activity.showCrashLogDialog(
+    crashLog: String,
+    onDismiss: (() -> Unit)? = null,
+) {
     val padding = (16 * resources.displayMetrics.density).roundToInt()
 
     val container =
@@ -165,6 +168,8 @@ internal fun Activity.showCrashLogDialog(crashLog: String) {
         .setPositiveButton(android.R.string.ok, null)
         .setNeutralButton(R.string.crash_dialog_copy) { _, _ ->
             copyCrashLogToClipboard(crashLog)
+        }.setOnDismissListener {
+            onDismiss?.invoke()
         }.show()
 }
 

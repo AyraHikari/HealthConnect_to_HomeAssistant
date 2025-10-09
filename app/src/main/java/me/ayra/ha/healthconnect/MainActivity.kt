@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var hc: HealthConnectManager
     private var bottomNavHeight = 0
     private var lastDestinationId: Int? = null
+    private var hasInitializedUi = false
     private val showInterpolator by lazy { OvershootInterpolator() }
     private val defaultInterpolator by lazy { DecelerateInterpolator() }
     private val bottomNavigationAnimationOptions by lazy {
@@ -89,14 +90,24 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (showPendingCrashLogIfAvailable { initializeUi() }) {
+            return
+        }
+
+        initializeUi()
+    }
+
+    private fun initializeUi() {
+        if (hasInitializedUi) return
+        hasInitializedUi = true
+
         scheduleSyncWorker()
         applicationContext.runServiceIfEnabled()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initializeGlideWithUnsafeOkHttp(this)
-
-        showPendingCrashLogIfAvailable()
 
         binding.bottomNav.doOnLayout {
             bottomNavHeight = it.height
@@ -290,14 +301,17 @@ class MainActivity : AppCompatActivity() {
         SyncWorker.schedule(applicationContext)
     }
 
-    private fun showPendingCrashLogIfAvailable() {
+    private fun showPendingCrashLogIfAvailable(onDialogDismissed: () -> Unit): Boolean {
         val preferences = getSharedPreferences(CrashLogger.PREFS_NAME, Context.MODE_PRIVATE)
         val crashLog =
             preferences
                 .getString(CrashLogger.KEY_CRASH_LOG, null)
                 ?.takeIf { it.isNotBlank() }
-                ?: return
+                ?: return false
         preferences.edit { remove(CrashLogger.KEY_CRASH_LOG) }
-        showCrashLogDialog(crashLog)
+        showCrashLogDialog(crashLog) {
+            onDialogDismissed()
+        }
+        return true
     }
 }
