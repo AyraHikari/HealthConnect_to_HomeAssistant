@@ -40,10 +40,10 @@ jobs:
 
           mkdir -p app/keystore
 
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > app/keystore/build.keystore
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > app/keystore/keystore.keystore
 
-          cat <<PROPERTIES > app/keystore/build.properties
-          storeFile=app/keystore/build.keystore
+          cat <<PROPERTIES > app/keystore/keystore.properties
+          storeFile=app/keystore/keystore.keystore
           storePassword=$ANDROID_KEYSTORE_PASSWORD
           keyAlias=$ANDROID_KEY_ALIAS
           keyPassword=$ANDROID_KEY_PASSWORD
