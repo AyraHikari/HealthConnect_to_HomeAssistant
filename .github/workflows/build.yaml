@@ -40,10 +40,10 @@ jobs:
 
           mkdir -p app/keystore
 
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > app/keystore/keystore.keystore
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > app/keystore/build.keystore
 
           cat <<PROPERTIES > app/keystore/keystore.properties
-          storeFile=app/keystore/keystore.keystore
+          storeFile=keystore/build.keystore
           storePassword=$ANDROID_KEYSTORE_PASSWORD
           keyAlias=$ANDROID_KEY_ALIAS
           keyPassword=$ANDROID_KEY_PASSWORD
@@ -54,3 +54,10 @@ jobs:
 
       - name: Build APK
         run: ./gradlew assembleRelease
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
