@@ -1,6 +1,7 @@
 package me.ayra.ha.healthconnect
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -9,6 +10,7 @@ import android.view.animation.OvershootInterpolator
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.health.connect.client.PermissionController
@@ -28,10 +30,12 @@ import me.ayra.ha.healthconnect.databinding.ActivityMainBinding
 import me.ayra.ha.healthconnect.network.initializeGlideWithUnsafeOkHttp
 import me.ayra.ha.healthconnect.utils.AppUtils.openUrlInBrowser
 import me.ayra.ha.healthconnect.utils.Coroutines.ioSafe
+import me.ayra.ha.healthconnect.utils.CrashLogger
 import me.ayra.ha.healthconnect.utils.HealthConnectManager
 import me.ayra.ha.healthconnect.utils.healthConnectBackgroundPermission
 import me.ayra.ha.healthconnect.utils.healthConnectPermissions
 import me.ayra.ha.healthconnect.utils.healthConnectReadPermissions
+import me.ayra.ha.healthconnect.utils.showCrashLogDialog
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import kotlin.concurrent.thread
@@ -91,6 +95,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initializeGlideWithUnsafeOkHttp(this)
+
+        showPendingCrashLogIfAvailable()
 
         binding.bottomNav.doOnLayout {
             bottomNavHeight = it.height
@@ -282,5 +288,16 @@ class MainActivity : AppCompatActivity() {
 
     fun scheduleSyncWorker() {
         SyncWorker.schedule(applicationContext)
+    }
+
+    private fun showPendingCrashLogIfAvailable() {
+        val preferences = getSharedPreferences(CrashLogger.PREFS_NAME, Context.MODE_PRIVATE)
+        val crashLog =
+            preferences
+                .getString(CrashLogger.KEY_CRASH_LOG, null)
+                ?.takeIf { it.isNotBlank() }
+                ?: return
+        preferences.edit { remove(CrashLogger.KEY_CRASH_LOG) }
+        showCrashLogDialog(crashLog)
     }
 }

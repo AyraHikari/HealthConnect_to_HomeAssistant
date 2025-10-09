@@ -11,6 +11,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.edit
 import androidx.core.content.getSystemService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import me.ayra.ha.healthconnect.R
@@ -38,7 +39,7 @@ class CrashLogger(
     fun consumeCrashLog(): String? {
         val crashLog = preferences.getString(KEY_CRASH_LOG, null)
         if (crashLog != null) {
-            preferences.edit().remove(KEY_CRASH_LOG).apply()
+            preferences.edit { remove(KEY_CRASH_LOG) }
         }
         return crashLog
     }
@@ -49,7 +50,7 @@ class CrashLogger(
     ) {
         runCatching {
             val stackTrace = buildCrashLog(thread, throwable)
-            preferences.edit().putString(KEY_CRASH_LOG, stackTrace).apply()
+            preferences.edit(commit = true) { putString(KEY_CRASH_LOG, stackTrace) }
             Log.e(TAG, "Uncaught exception captured", throwable)
         }
 
@@ -78,8 +79,8 @@ class CrashLogger(
     }
 
     companion object {
-        private const val PREFS_NAME = "crash_logs"
-        private const val KEY_CRASH_LOG = "last_crash"
+        internal const val PREFS_NAME = "crash_logs"
+        internal const val KEY_CRASH_LOG = "last_crash"
     }
 }
 
@@ -92,73 +93,14 @@ class CrashLogLifecycleCallbacks(
     override fun onActivityResumed(activity: Activity) {
         if (hasShownDialog) return
 
-        val crashLog = crashLogger.consumeCrashLog()?.takeIf { it.isNotBlank() } ?: return
+        val crashLog = crashLogger.consumeCrashLog()?.takeIf { it.isNotBlank() }
+        if (crashLog == null) {
+            application.unregisterActivityLifecycleCallbacks(this)
+            return
+        }
         hasShownDialog = true
-        showCrashDialog(activity, crashLog)
+        activity.showCrashLogDialog(crashLog)
         application.unregisterActivityLifecycleCallbacks(this)
-    }
-
-    private fun showCrashDialog(
-        activity: Activity,
-        crashLog: String,
-    ) {
-        val padding = (16 * activity.resources.displayMetrics.density).roundToInt()
-
-        val container =
-            LinearLayout(activity).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(padding, padding, padding, padding)
-            }
-
-        val messageView =
-            TextView(activity).apply {
-                text = activity.getString(R.string.crash_dialog_message)
-                setPadding(0, 0, 0, padding / 2)
-            }
-
-        val logView =
-            TextView(activity).apply {
-                text = crashLog
-                typeface = android.graphics.Typeface.MONOSPACE
-                setTextIsSelectable(true)
-            }
-
-        val scrollView =
-            ScrollView(activity).apply {
-                setPadding(0, padding / 2, 0, 0)
-                isFillViewport = true
-                layoutParams =
-                    LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        (240 * activity.resources.displayMetrics.density).roundToInt(),
-                    )
-                addView(logView)
-            }
-
-        container.addView(messageView)
-        container.addView(scrollView)
-
-        MaterialAlertDialogBuilder(activity)
-            .setTitle(R.string.crash_dialog_title)
-            .setView(container)
-            .setPositiveButton(android.R.string.ok, null)
-            .setNeutralButton(R.string.crash_dialog_copy) { _, _ ->
-                copyCrashLogToClipboard(activity, crashLog)
-            }.show()
-    }
-
-    private fun copyCrashLogToClipboard(
-        activity: Activity,
-        crashLog: String,
-    ) {
-        val clipboard = activity.getSystemService<android.content.ClipboardManager>()
-        clipboard?.setPrimaryClip(
-            ClipData.newPlainText(
-                activity.getString(R.string.crash_dialog_clipboard_label),
-                crashLog,
-            ),
-        )
-        Toast.makeText(activity, R.string.crash_dialog_copied, Toast.LENGTH_SHORT).show()
     }
 
     override fun onActivityCreated(
@@ -178,4 +120,61 @@ class CrashLogLifecycleCallbacks(
     ) = Unit
 
     override fun onActivityDestroyed(activity: Activity) = Unit
+}
+
+internal fun Activity.showCrashLogDialog(crashLog: String) {
+    val padding = (16 * resources.displayMetrics.density).roundToInt()
+
+    val container =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(padding, padding, padding, padding)
+        }
+
+    val messageView =
+        TextView(this).apply {
+            text = getString(R.string.crash_dialog_message)
+            setPadding(0, 0, 0, padding / 2)
+        }
+
+    val logView =
+        TextView(this).apply {
+            text = crashLog
+            typeface = android.graphics.Typeface.MONOSPACE
+            setTextIsSelectable(true)
+        }
+
+    val scrollView =
+        ScrollView(this).apply {
+            setPadding(0, padding / 2, 0, 0)
+            isFillViewport = true
+            layoutParams =
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    (240 * resources.displayMetrics.density).roundToInt(),
+                )
+            addView(logView)
+        }
+
+    container.addView(messageView)
+    container.addView(scrollView)
+
+    MaterialAlertDialogBuilder(this)
+        .setTitle(R.string.crash_dialog_title)
+        .setView(container)
+        .setPositiveButton(android.R.string.ok, null)
+        .setNeutralButton(R.string.crash_dialog_copy) { _, _ ->
+            copyCrashLogToClipboard(crashLog)
+        }.show()
+}
+
+private fun Activity.copyCrashLogToClipboard(crashLog: String) {
+    val clipboard = getSystemService<android.content.ClipboardManager>()
+    clipboard?.setPrimaryClip(
+        ClipData.newPlainText(
+            getString(R.string.crash_dialog_clipboard_label),
+            crashLog,
+        ),
+    )
+    Toast.makeText(this, R.string.crash_dialog_copied, Toast.LENGTH_SHORT).show()
 }
