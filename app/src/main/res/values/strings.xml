@@ -98,6 +98,12 @@
     <string name="foreground_service_notification_title">Health Connect sync is active</string>
     <string name="foreground_service_notification_text">Tap to open notification settings or disable the foreground service.</string>
 
+    <string name="crash_dialog_title">Unexpected error detected</string>
+    <string name="crash_dialog_message">The app crashed previously. Share the following log with the developer to help fix the issue:</string>
+    <string name="crash_dialog_copy">Copy log</string>
+    <string name="crash_dialog_copied">Crash log copied</string>
+    <string name="crash_dialog_clipboard_label">Crash log</string>
+
     <string-array name="sync_intervals">
         <item>15 minutes</item>
         <item>30 minutes</item>
