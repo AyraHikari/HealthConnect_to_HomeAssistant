@@ -19,3 +19,11 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep Kotlin metadata so that reflection based serializers (Jackson, Moshi, etc.)
+# can continue to discover data class properties in release builds.
+-keep class kotlin.Metadata { *; }
+
+# Preserve the Health Connect data models that are cached via Jackson so the
+# generated JSON keeps the expected field names.
+-keep class me.ayra.ha.healthconnect.data.** { *; }
